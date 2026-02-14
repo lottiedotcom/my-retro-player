@@ -3,170 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RetroPlayer 2000</title>
-    <link rel="manifest" href="manifest.json">
+    <title>WinPlay 98 - Pink Edition</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            --bg-metal: linear-gradient(180deg, #e0e0e0 0%, #888 45%, #666 50%, #888 55%, #e0e0e0 100%);
-            --lcd-green: #00ff41;
+            /* Windows 98 Pink Theme */
+            --win-bg: #e6e6e6;
+            --win-gray: #c0c0c0;
+            --win-dark: #808080;
+            --win-light: #ffffff;
             --win-blue: #000080;
+            --accent-pink: #ff0080;
+            --accent-bar: linear-gradient(90deg, #ff0080, #800040);
         }
 
-        body { 
-            background: #2c3e50; 
-            font-family: 'Tahoma', 'Geneva', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; padding: 10px;
-            margin: 0;
+        body {
+            background: #222;
+            font-family: 'Tahoma', sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 10px; margin: 0; min-height: 100vh;
         }
 
-        /* Responsive Player Shell */
-        #player-skin {
-            width: 95%; 
-            max-width: 400px;
-            background: var(--bg-metal);
-            border: 3px solid #fff;
-            border-right-color: #444; 
-            border-bottom-color: #444;
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 10px 10px 25px rgba(0,0,0,0.6);
-            box-sizing: border-box;
-            position: relative;
+        /* --- THE PLAYER (This is what we save) --- */
+        #player-window {
+            width: 340px;
+            background: var(--win-gray);
+            border: 2px solid;
+            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+            padding: 2px;
+            margin-bottom: 20px;
         }
 
-        .header { color: #fff; font-size: 10px; margin-bottom: 8px; font-weight: bold; text-shadow: 1px 1px #000; }
+        /* Title Bar */
+        .title-bar {
+            background: var(--accent-bar);
+            color: white; padding: 3px; font-weight: bold; font-size: 11px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2px;
+        }
+        .win-btn-group { display: flex; gap: 2px; }
+        .win-btn {
+            width: 14px; height: 14px; background: var(--win-gray);
+            border: 1px solid;
+            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+            font-size: 8px; line-height: 12px; text-align: center; color: black;
+            box-shadow: none; padding: 0; cursor: default;
+        }
 
-        /* LCD Display */
-        .display-panel {
+        /* Main Display (LCD) */
+        .lcd-panel {
             background: #000;
-            border: 3px inset #888;
-            padding: 10px;
-            color: var(--lcd-green);
-            margin-bottom: 10px;
-            height: 60px;
-            box-sizing: border-box;
+            border: 2px inset;
+            border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
+            margin: 4px; padding: 10px;
+            color: #00ff00; font-family: 'Courier New', monospace;
+            text-shadow: 0 0 3px #00ff00;
         }
+        .lcd-main { font-size: 20px; white-space: nowrap; overflow: hidden; }
+        .lcd-sub { font-size: 12px; color: #00aa00; margin-top: 5px; display: flex; justify-content: space-between; }
 
-        #track-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #timer { font-size: 26px; font-family: monospace; font-weight: bold; margin-top: 2px; }
-
-        /* Playlist Window */
-        .playlist-window {
-            background: var(--win-blue);
+        /* Playlist Container */
+        .playlist-frame {
+            background: #fff;
+            border: 2px inset;
+            border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
             height: 180px;
-            overflow-y: auto;
-            border: 2px inset #fff;
-            color: white;
+            overflow-y: hidden; /* Hide scrollbar for clean photo */
             font-size: 11px;
-            width: 100%;
-            box-sizing: border-box;
+            margin: 4px;
         }
 
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #c0c0c0; color: #000; position: sticky; top: 0; text-align: left; padding: 2px; }
-        td { padding: 4px; border-bottom: 1px solid #1a1a9a; cursor: default; }
-
-        /* Controls */
-        .controls { display: flex; justify-content: center; gap: 8px; margin-top: 15px; }
-        .btn {
-            width: 38px; height: 38px;
-            background: radial-gradient(circle at 30% 30%, #eee, #999);
-            border-radius: 50%;
-            border: 2px solid #555;
-            box-shadow: 2px 2px 0 #444, inset -2px -2px 4px rgba(0,0,0,0.3);
-            cursor: pointer; font-size: 10px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center;
+        .pl-row {
+            display: flex; padding: 3px 5px; border-bottom: 1px dotted #ccc;
+            cursor: pointer;
         }
-        .btn:active { transform: translate(1px, 1px); box-shadow: none; }
-
-        /* Input Tools Area */
-        #ui-tools { 
-            margin-top: 20px; 
-            background: rgba(255,255,255,0.1); 
-            padding: 15px; 
-            border-radius: 10px; 
-            color: white; 
-            width: 95%; 
-            max-width: 400px;
-            box-sizing: border-box;
-        }
-        textarea { width: 100%; height: 80px; margin-bottom: 10px; border-radius: 5px; border: none; padding: 8px; box-sizing: border-box; }
+        .pl-row:hover { background: #ffccff; }
+        .pl-row.active { background: var(--accent-pink); color: white; }
         
-        .action-btn { 
-            width: 100%; padding: 12px; margin-bottom: 10px; cursor: pointer; font-weight: bold; border-radius: 5px; border: none;
+        .pl-num { width: 20px; }
+        .pl-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pl-time { width: 30px; text-align: right; }
+
+        /* Chunk Controls */
+        .controls {
+            display: flex; justify-content: center; gap: 4px; padding: 6px;
         }
+        .chunk-btn {
+            background: var(--win-gray);
+            border: 2px solid;
+            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+            padding: 5px 15px; font-size: 10px; font-weight: bold;
+            cursor: pointer;
+        }
+        .chunk-btn:active { border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark); transform: translate(1px, 1px); }
+
+        /* --- THE EDITOR TOOLS --- */
+        #editor-panel {
+            width: 340px; background: #333; color: white; padding: 10px;
+            border: 1px solid #555;
+        }
+        
+        .tool-btn {
+            display: block; width: 100%; padding: 10px; margin-bottom: 10px;
+            background: #ff0080; border: none; color: white; font-weight: bold; cursor: pointer;
+        }
+        
+        /* The Cleanup List */
+        #draft-list {
+            background: #222; max-height: 150px; overflow-y: auto; 
+            margin-bottom: 10px; border: 1px solid #555; display: none;
+        }
+        .draft-item {
+            padding: 5px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; font-size: 12px;
+        }
+        .del-btn { color: red; font-weight: bold; cursor: pointer; padding: 0 5px; }
+
     </style>
 </head>
 <body>
 
-<div id="player-skin">
-    <div class="header">🎧 VINTAGE PLAYER v2.0</div>
-    
-    <div class="display-panel">
-        <div id="track-title">READY TO SPIN...</div>
-        <div id="timer">01:37</div>
+<div id="player-window">
+    <div class="title-bar">
+        <span>💖 WinPlay 98</span>
+        <div class="win-btn-group">
+            <button class="win-btn">_</button>
+            <button class="win-btn">□</button>
+            <button class="win-btn">X</button>
+        </div>
     </div>
 
-    <div class="playlist-window">
-        <table>
-            <thead><tr><th>#</th><th>Track</th><th>Time</th></tr></thead>
-            <tbody id="list-body">
-                <tr><td>1</td><td>Paste your songs below!</td><td>3:45</td></tr>
-            </tbody>
-        </table>
+    <div class="lcd-panel">
+        <div class="lcd-main" id="lcd-text">READY...</div>
+        <div class="lcd-sub">
+            <span>STEREO</span>
+            <span>128 KBPS</span>
+            <span id="lcd-time">00:00</span>
+        </div>
+    </div>
+
+    <div class="playlist-frame" id="final-list">
+        <div class="pl-row active">
+            <div class="pl-num">1.</div>
+            <div class="pl-title" contenteditable="true">Tap "Import" below...</div>
+            <div class="pl-time" contenteditable="true">3:45</div>
+        </div>
+        <div class="pl-row">
+            <div class="pl-num">2.</div>
+            <div class="pl-title" contenteditable="true">...to load your screenshot!</div>
+            <div class="pl-time" contenteditable="true">2:10</div>
+        </div>
     </div>
 
     <div class="controls">
-        <button class="btn">■</button>
-        <button class="btn">▶</button>
-        <button class="btn">||</button>
-        <button class="btn">📸</button>
+        <button class="chunk-btn">PREV</button>
+        <button class="chunk-btn">PLAY</button>
+        <button class="chunk-btn">PAUSE</button>
+        <button class="chunk-btn">STOP</button>
+        <button class="chunk-btn">NEXT</button>
     </div>
 </div>
 
-<div id="ui-tools">
-    <h3 style="margin-top:0;">1. Paste Spotify List</h3>
-    <textarea id="song-input" placeholder="Song Name - Artist..."></textarea>
-    <button class="action-btn" onclick="updatePlaylist()" style="background: #eee; color: #333;">GENERATE UI</button>
-    <button class="action-btn" onclick="takeSnap()" style="background: #27ae60; color: white;">💾 SAVE AS PHOTO</button>
+<div id="editor-panel">
+    <p style="margin:0 0 10px 0; font-size:12px;">📸 IMPORT PLAYLIST</p>
+    
+    <button class="tool-btn" onclick="document.getElementById('screen-input').click()">1. Upload Screenshot</button>
+    <input type="file" id="screen-input" accept="image/*" style="display:none;" onchange="readImage(this)">
+    
+    <div id="status-msg" style="font-size:11px; color:yellow; margin-bottom:5px;"></div>
+    <div id="draft-list">
+        </div>
+
+    <button class="tool-btn" style="background:#444;" onclick="pushToPlayer()">2. Update Player</button>
+    <button class="tool-btn" style="background:#00aa00;" onclick="saveImage()">3. Save Image</button>
 </div>
 
 <script>
-    function updatePlaylist() {
-        const input = document.getElementById('song-input').value;
-        const lines = input.split('\n').filter(line => line.trim() !== "");
-        const tbody = document.getElementById('list-body');
-        tbody.innerHTML = "";
+    let rawLines = [];
 
-        lines.forEach((line, index) => {
-            let row = `<tr>
-                <td>${index + 1}</td>
-                <td>${line}</td>
-                <td>${Math.floor(Math.random() * 3 + 2)}:${Math.floor(Math.random() * 50 + 10)}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
+    // 1. READ IMAGE
+    function readImage(input) {
+        if (!input.files || !input.files[0]) return;
         
-        if(lines.length > 0) {
-            document.getElementById('track-title').innerText = lines[0];
-        }
+        const msg = document.getElementById('status-msg');
+        msg.innerText = "⏳ Scanning image... please wait...";
+        document.getElementById('draft-list').style.display = 'block';
+
+        Tesseract.recognize(
+            input.files[0],
+            'eng'
+        ).then(({ data: { text } }) => {
+            msg.innerText = "✅ Done! Delete the junk below:";
+            
+            // Filter empty lines
+            rawLines = text.split('\n').filter(l => l.trim().length > 1);
+            
+            renderDrafts();
+        });
     }
 
-    function takeSnap() {
-        const element = document.getElementById('player-skin');
-        // We use a slight delay to ensure mobile keyboard is closed
-        setTimeout(() => {
-            html2canvas(element, {
-                backgroundColor: "#2c3e50",
-                scale: 2 // Higher quality for social media
-            }).then(canvas => {
-                let link = document.createElement("a");
-                link.download = "retro-playlist.png";
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            });
-        }, 100);
+    // 2. RENDER DRAFT LIST (For Cleanup)
+    function renderDrafts() {
+        const container = document.getElementById('draft-list');
+        container.innerHTML = "";
+        
+        rawLines.forEach((line, index) => {
+            const div = document.createElement('div');
+            div.className = 'draft-item';
+            div.innerHTML = `
+                <span contenteditable="true" style="width:85%">${line}</span>
+                <span class="del-btn" onclick="removeLine(${index})">X</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // 3. REMOVE LINE
+    function removeLine(index) {
+        rawLines.splice(index, 1);
+        renderDrafts();
+    }
+
+    // 4. PUSH TO PLAYER
+    function pushToPlayer() {
+        // Re-read from the DOM in case user edited text
+        const currentItems = document.querySelectorAll('.draft-item span:first-child');
+        const finalList = document.getElementById('final-list');
+        finalList.innerHTML = "";
+
+        // If list is empty, don't crash
+        if(currentItems.length === 0) return;
+
+        // Set LCD to first track
+        document.getElementById('lcd-text').innerText = "*** " + currentItems[0].innerText + " ***";
+
+        currentItems.forEach((item, i) => {
+            // Fake time gen
+            const min = Math.floor(Math.random() * 3) + 2;
+            let sec = Math.floor(Math.random() * 60);
+            if(sec < 10) sec = "0" + sec;
+
+            const row = `
+            <div class="pl-row ${i === 0 ? 'active' : ''}">
+                <div class="pl-num">${i + 1}.</div>
+                <div class="pl-title" contenteditable="true">${item.innerText}</div>
+                <div class="pl-time" contenteditable="true">${min}:${sec}</div>
+            </div>`;
+            finalList.innerHTML += row;
+        });
+        
+        document.getElementById('draft-list').style.display = 'none';
+        document.getElementById('status-msg').innerText = "✨ Player Updated!";
+    }
+
+    // 5. SAVE
+    function saveImage() {
+        html2canvas(document.getElementById('player-window'), { scale: 3, backgroundColor: null }).then(canvas => {
+            const link = document.createElement("a");
+            link.download = "win98-playlist.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
     }
 </script>
 
