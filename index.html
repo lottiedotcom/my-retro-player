@@ -39,7 +39,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Adds space between elements */
+            gap: 15px; 
         }
 
         /* Stars Decoration */
@@ -65,7 +65,7 @@
         .album-art-container {
             position: relative; 
             width: 100%; 
-            height: 320px; /* Made TALLER as requested */
+            height: 320px; 
             background: #000; 
             border: 3px solid #fff;
             border-radius: 10px; 
@@ -93,6 +93,7 @@
         /* Pink Pill Buttons */
         .btn-row { display: flex; justify-content: space-between; gap: 10px; }
         
+        /* Changed to DIV to fix white-button glitch */
         .y2k-btn {
             flex: 1; padding: 12px 0; border: none; border-radius: 30px;
             font-family: 'Orbitron', sans-serif; font-size: 18px; color: #fff;
@@ -103,6 +104,7 @@
                 0 5px 10px rgba(0,0,0,0.2);
             text-shadow: 0 1px 2px rgba(0,0,0,0.3); 
             cursor: pointer; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
         }
         
         .y2k-btn:active { transform: translateY(2px); box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
@@ -147,10 +149,10 @@
         </div>
 
         <div class="btn-row">
-            <button class="y2k-btn">⏮</button>
-            <button class="y2k-btn">⏯</button>
-            <button class="y2k-btn" style="background: linear-gradient(180deg, #ffcccc 0%, #ff3300 50%, #cc0000 100%);">■</button>
-            <button class="y2k-btn">⏭</button>
+            <div class="y2k-btn">⏮</div>
+            <div class="y2k-btn">⏯</div>
+            <div class="y2k-btn" style="background: linear-gradient(180deg, #ffcccc 0%, #ff3300 50%, #cc0000 100%);">■</div>
+            <div class="y2k-btn">⏭</div>
         </div>
     </div>
 
