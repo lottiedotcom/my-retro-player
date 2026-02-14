@@ -3,272 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2K Ultimate Builder</title>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen&display=swap" rel="stylesheet">
+    <title>RetroPod PWA</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            /* Default: SILVER METAL */
-            --bg-body: #111;
-            --player-bg: linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 100%);
-            --player-border: #fff;
+            --metal-gradient: linear-gradient(180deg, #dcdcdc 0%, #888 49%, #555 50%, #888 100%);
             --screen-bg: #000;
-            --screen-text: #00ff00;
-            --highlight: #000080;
-            --btn-style: radial-gradient(circle, #fff, #999);
-            --font-main: 'Tahoma', sans-serif;
+            --lcd-color: #00ff00;
+            --btn-highlight: #e6e6e6;
         }
 
         body {
-            background: var(--bg-body);
-            background-image: radial-gradient(#333 1px, transparent 1px);
-            background-size: 20px 20px;
-            font-family: var(--font-main);
-            display: flex; flex-direction: column; align-items: center;
-            padding: 10px; margin: 0; min-height: 100vh;
+            background: #202020;
+            font-family: 'Arial Narrow', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box;
         }
 
-        /* --- THE PLAYER (This is what we save) --- */
-        #player-zone {
+        /* --- THE PLAYER CHASSIS --- */
+        #player-skin {
+            width: 100%;
+            max-width: 360px;
+            background: var(--metal-gradient);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 10px rgba(255,255,255,0.5);
+            border: 2px solid #aaa;
             position: relative;
-            padding: 20px; 
-            /* Transparent container for stickers to overhang */
         }
 
-        #winamp-shell {
-            width: 340px;
-            background: var(--player-bg);
-            border: 2px solid var(--player-border);
-            border-radius: 8px 8px 0 0;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-            padding: 5px;
+        /* Top Info Screen */
+        .lcd-screen {
+            background: #111;
+            border: 4px inset #555;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        .track-scroller {
+            white-space: nowrap; overflow: hidden;
+            color: var(--lcd-color);
+            font-family: 'Courier New', monospace;
+            font-size: 14px; text-transform: uppercase;
+            text-shadow: 0 0 5px var(--lcd-color);
+            margin-bottom: 5px;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 28px; color: var(--lcd-color); font-weight: bold;
+            text-align: right;
+            text-shadow: 0 0 5px var(--lcd-color);
+        }
+
+        /* Album Art Window */
+        .art-window {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #000;
+            border: 3px inset #666;
+            margin-bottom: 15px;
             position: relative;
-            z-index: 2; /* Sit above background */
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* Title Bar */
-        .title-bar {
-            background: linear-gradient(90deg, var(--highlight), #222);
-            color: white; padding: 3px 6px; font-weight: bold; font-size: 11px;
-            display: flex; justify-content: space-between; cursor: pointer;
-            border: 1px solid #fff; margin-bottom: 5px;
+        #album-art {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: none; /* Hidden until loaded */
         }
 
-        /* Main LCD */
-        .lcd-display {
-            background: var(--screen-bg);
-            border: 2px inset #555;
-            padding: 10px; margin-bottom: 10px;
-            color: var(--screen-text);
-            font-family: 'VT323', monospace;
-            text-shadow: 0 0 5px var(--screen-text);
-        }
-        
-        .big-time { font-size: 32px; line-height: 1; }
-        .scroller { white-space: nowrap; overflow: hidden; font-size: 14px; margin-bottom: 5px;}
-
-        /* Playlist Window (Attached Bottom) */
-        #playlist-shell {
-            width: 340px;
-            background: #fff;
-            border: 2px solid var(--player-border);
-            border-top: none;
-            height: 200px;
-            overflow-y: auto;
-            font-size: 11px;
-            position: relative;
-            z-index: 1;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+        .placeholder-art {
+            color: #444; font-size: 50px;
         }
 
-        table { width: 100%; border-collapse: collapse; }
-        tr { border-bottom: 1px dotted #ccc; cursor: pointer; }
-        tr:hover { background: #eee; }
-        td { padding: 4px; }
-        .active-row { background: var(--highlight) !important; color: white; }
-
-        /* Draggable Sticker Class */
-        .sticker {
-            position: absolute; font-size: 30px; cursor: grab; z-index: 10;
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3));
-        }
-
-        /* --- CONTROLS AREA (Hidden in photo) --- */
-        #controls {
-            margin-top: 30px; width: 95%; max-width: 400px;
-            background: #222; border: 1px solid #444; padding: 15px;
-            color: white; border-radius: 8px;
-        }
-        
-        textarea { 
-            width: 100%; height: 80px; background: #000; color: #0f0; 
-            border: 1px solid #555; font-family: monospace; font-size: 12px;
-            padding: 5px; box-sizing: border-box;
+        /* Controls */
+        .controls-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.2);
+            padding: 10px; border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .btn {
-            background: #444; color: white; border: 1px solid #777;
-            padding: 8px 12px; margin: 4px; cursor: pointer; font-size: 11px;
-            text-transform: uppercase; letter-spacing: 1px;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: radial-gradient(circle at 30% 30%, #fff, #999);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            cursor: pointer;
+            font-size: 16px; display: flex; align-items: center; justify-content: center;
         }
-        .btn:hover { background: #555; }
-        .btn-action { background: var(--highlight); border-color: #fff; font-weight: bold; }
+        .btn:active { transform: scale(0.95); background: #777; }
+        .btn-large { width: 65px; height: 65px; font-size: 24px; }
 
+        /* Sliders / Inputs */
+        #seek-bar { width: 100%; margin: 10px 0; cursor: pointer; }
+
+        /* Hidden Inputs */
+        .file-inputs {
+            margin-top: 20px;
+            background: #333; padding: 15px; border-radius: 10px; width: 100%;
+            max-width: 360px; color: white; text-align: center;
+        }
+        
+        .upload-btn {
+            background: #444; color: white; border: 1px solid #777;
+            padding: 10px; margin: 5px; width: 100%; cursor: pointer;
+            text-transform: uppercase; font-size: 12px; letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
 
-<div id="player-zone">
-    <div id="winamp-shell">
-        <div class="title-bar">
-            <span>WINAMP_2003.EXE</span>
-            <span>_ □ X</span>
-        </div>
-        
-        <div class="lcd-display">
-            <div class="scroller">*** WELCOME TO THE Y2K ZONE ***</div>
-            <div style="display:flex; justify-content:space-between; align-items:end;">
-                <span class="big-time">00:00</span>
-                <span>128kbps stereo</span>
-            </div>
-        </div>
-
-        <div style="display:flex; gap:5px; height:25px;">
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:2; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-        </div>
+<div id="player-skin">
+    <div class="lcd-screen">
+        <div class="track-scroller" id="track-name">NO DISC INSERTED...</div>
+        <div class="time-display" id="timer">00:00</div>
     </div>
 
-    <div id="playlist-shell">
-        <table id="pl-table">
-            <tbody>
-                <tr class="active-row"><td>1. Paste your songs below!</td><td>3:45</td></tr>
-            </tbody>
-        </table>
+    <div class="art-window">
+        <div class="placeholder-art" id="placeholder">♪</div>
+        <img id="album-art" src="" alt="Album Art">
+    </div>
+
+    <input type="range" id="seek-bar" value="0" min="0" step="1">
+
+    <div class="controls-row">
+        <button class="btn" onclick="stopAudio()">■</button>
+        <button class="btn btn-large" onclick="togglePlay()" id="play-btn">▶</button>
+        <button class="btn" onclick="takePhoto()">📷</button>
     </div>
 </div>
 
-<div id="controls">
-    <h3 style="margin-top:0; color:hotpink;">1. PASTE LIST</h3>
-    <p style="font-size:11px; color:#aaa;">(Paste a list of songs from anywhere here)</p>
-    <textarea id="paste-box" placeholder="Britney Spears - Toxic&#10;Linkin Park - Numb&#10;..."></textarea>
-    <button class="btn btn-action" onclick="generateList()" style="width:100%;">⚡ GENERATE PLAYLIST</button>
+<div class="file-inputs">
+    <p style="margin:0 0 10px 0; font-size:12px; color:#aaa;">/// MEDIA LOADER ///</p>
     
-    <hr style="border-color:#444; margin:15px 0;">
+    <label class="upload-btn">
+        📂 Load Song (MP3)
+        <input type="file" id="audio-input" accept="audio/*" style="display: none;">
+    </label>
     
-    <h3 style="margin-top:0; color:cyan;">2. CUSTOMIZE</h3>
-    <button class="btn" onclick="setSkin('silver')">💾 Silver</button>
-    <button class="btn" onclick="setSkin('pink')">💖 Bratz</button>
-    <button class="btn" onclick="setSkin('matrix')">👽 Matrix</button>
-    <button class="btn" onclick="setSkin('glass')">🧊 Aero</button>
-    
-    <br><br>
-    <div style="background:#333; padding:5px;">
-        <span style="font-size:12px;">Add Sticker:</span>
-        <button class="btn" onclick="addSticker('🦋')">🦋</button>
-        <button class="btn" onclick="addSticker('⭐')">⭐</button>
-        <button class="btn" onclick="addSticker('💿')">💿</button>
-        <button class="btn" onclick="addSticker('👽')">👽</button>
-        <button class="btn" onclick="addSticker('🔥')">🔥</button>
-        <button class="btn" onclick="clearStickers()">❌ Clear</button>
-    </div>
-
-    <br>
-    <button class="btn btn-action" onclick="saveImage()" style="width:100%; padding:15px; font-size:14px; background:#00ff00; color:black;">📸 SAVE IMAGE</button>
+    <label class="upload-btn">
+        🖼️ Load Cover Art
+        <input type="file" id="image-input" accept="image/*" style="display: none;">
+    </label>
 </div>
+
+<audio id="audio-player"></audio>
 
 <script>
-    // 1. GENERATE PLAYLIST FROM TEXT
-    function generateList() {
-        const text = document.getElementById('paste-box').value;
-        const lines = text.split('\n').filter(line => line.trim() !== "");
-        const tbody = document.querySelector("#pl-table tbody");
-        
-        if (lines.length === 0) return;
+    const audioPlayer = document.getElementById('audio-player');
+    const playBtn = document.getElementById('play-btn');
+    const seekBar = document.getElementById('seek-bar');
+    const trackName = document.getElementById('track-name');
+    const timer = document.getElementById('timer');
+    const albumArt = document.getElementById('album-art');
+    const placeholder = document.getElementById('placeholder');
 
-        tbody.innerHTML = ""; // Clear current
+    // 1. Handle Audio Upload
+    document.getElementById('audio-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const fileUrl = URL.createObjectURL(file);
+            audioPlayer.src = fileUrl;
+            trackName.innerText = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+            trackName.style.animation = "marquee 5s linear infinite";
+            timer.innerText = "00:00";
+        }
+    });
 
-        lines.forEach((line, index) => {
-            // Random time generator
-            const min = Math.floor(Math.random() * 3) + 2;
-            let sec = Math.floor(Math.random() * 60);
-            if (sec < 10) sec = "0" + sec;
-            
-            // Clean up the text (remove Spotify junk if present)
-            let cleanText = line.replace(/http\S+/g, "").trim();
-            if (cleanText.length > 40) cleanText = cleanText.substring(0, 40) + "...";
+    // 2. Handle Image Upload
+    document.getElementById('image-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                albumArt.src = event.target.result;
+                albumArt.style.display = "block";
+                placeholder.style.display = "none";
+            }
+            reader.readAsDataURL(file);
+        }
+    });
 
-            const row = `<tr>
-                <td>${index + 1}. ${cleanText}</td>
-                <td style="text-align:right;">${min}:${sec}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
-
-        // Set the marquee to the first song
-        document.querySelector('.scroller').innerText = "*** " + lines[0] + " ***";
-    }
-
-    // 2. SKIN ENGINE
-    function setSkin(type) {
-        const root = document.documentElement;
-        if (type === 'silver') {
-            root.style.setProperty('--player-bg', 'linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 100%)');
-            root.style.setProperty('--screen-bg', '#000');
-            root.style.setProperty('--screen-text', '#00ff00');
-            root.style.setProperty('--highlight', '#000080');
-            root.style.setProperty('--btn-style', 'radial-gradient(circle, #fff, #999)');
-        } else if (type === 'pink') {
-            root.style.setProperty('--player-bg', 'linear-gradient(180deg, #ff99cc 0%, #ff66b2 100%)');
-            root.style.setProperty('--screen-bg', '#fff0f5');
-            root.style.setProperty('--screen-text', '#ff0066');
-            root.style.setProperty('--highlight', '#ff0099');
-            root.style.setProperty('--btn-style', 'radial-gradient(circle, #ffe6f2, #ff66b2)');
-        } else if (type === 'matrix') {
-            root.style.setProperty('--player-bg', '#000');
-            root.style.setProperty('--player-border', '#00ff00');
-            root.style.setProperty('--screen-bg', '#001100');
-            root.style.setProperty('--screen-text', '#00ff00');
-            root.style.setProperty('--highlight', '#003300');
-            root.style.setProperty('--btn-style', '#005500');
-        } else if (type === 'glass') {
-            root.style.setProperty('--player-bg', 'rgba(200, 240, 255, 0.6)');
-            root.style.setProperty('--player-border', 'rgba(255,255,255,0.8)');
-            root.style.setProperty('--screen-bg', 'rgba(0,0,0,0.5)');
-            root.style.setProperty('--screen-text', '#00ffff');
-            root.style.setProperty('--highlight', 'rgba(0,100,255,0.5)');
-            root.style.setProperty('--btn-style', 'rgba(255,255,255,0.4)');
+    // 3. Playback Controls
+    function togglePlay() {
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+            playBtn.innerText = "||";
+        } else {
+            audioPlayer.pause();
+            playBtn.innerText = "▶";
         }
     }
 
-    // 3. STICKER SYSTEM
-    function addSticker(emoji) {
-        const zone = document.getElementById('player-zone');
-        const s = document.createElement('div');
-        s.className = 'sticker';
-        s.innerText = emoji;
-        
-        // Random position
-        s.style.left = Math.random() * 250 + 'px';
-        s.style.top = Math.random() * 200 + 'px';
-        s.style.transform = `rotate(${Math.random() * 40 - 20}deg)`;
-        
-        zone.appendChild(s);
-    }
-    
-    function clearStickers() {
-        document.querySelectorAll('.sticker').forEach(el => el.remove());
+    function stopAudio() {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        playBtn.innerText = "▶";
     }
 
-    // 4. SAVE IMAGE
-    function saveImage() {
-        const element = document.getElementById('player-zone');
+    // 4. Update Timer & Seek Bar
+    audioPlayer.addEventListener('timeupdate', () => {
+        const current = audioPlayer.currentTime;
+        const duration = audioPlayer.duration || 0;
+
+        // Format Time
+        let mins = Math.floor(current / 60);
+        let secs = Math.floor(current % 60);
+        if (secs < 10) secs = "0" + secs;
+        timer.innerText = `${mins}:${secs}`;
+
+        // Update Slider
+        seekBar.value = (current / duration) * 100;
+    });
+
+    // Allow scrubbing
+    seekBar.addEventListener('input', (e) => {
+        const duration = audioPlayer.duration;
+        audioPlayer.currentTime = (e.target.value / 100) * duration;
+    });
+
+    // 5. Save as Photo
+    function takePhoto() {
+        const element = document.getElementById('player-skin');
         html2canvas(element, { scale: 3, backgroundColor: null }).then(canvas => {
             let link = document.createElement("a");
-            link.download = "y2k-playlist.png";
+            link.download = "now-playing.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
