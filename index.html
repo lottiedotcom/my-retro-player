@@ -3,265 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinPlay 98 - Pink Edition</title>
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <title>Y2K Ultimate Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            /* Windows 98 Pink Theme */
-            --win-bg: #e6e6e6;
-            --win-gray: #c0c0c0;
-            --win-dark: #808080;
-            --win-light: #ffffff;
-            --win-blue: #000080;
-            --accent-pink: #ff0080;
-            --accent-bar: linear-gradient(90deg, #ff0080, #800040);
+            /* Default: SILVER METAL */
+            --bg-body: #111;
+            --player-bg: linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 100%);
+            --player-border: #fff;
+            --screen-bg: #000;
+            --screen-text: #00ff00;
+            --highlight: #000080;
+            --btn-style: radial-gradient(circle, #fff, #999);
+            --font-main: 'Tahoma', sans-serif;
         }
 
         body {
-            background: #222;
-            font-family: 'Tahoma', sans-serif;
+            background: var(--bg-body);
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: var(--font-main);
             display: flex; flex-direction: column; align-items: center;
             padding: 10px; margin: 0; min-height: 100vh;
         }
 
         /* --- THE PLAYER (This is what we save) --- */
-        #player-window {
+        #player-zone {
+            position: relative;
+            padding: 20px; 
+            /* Transparent container for stickers to overhang */
+        }
+
+        #winamp-shell {
             width: 340px;
-            background: var(--win-gray);
-            border: 2px solid;
-            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+            background: var(--player-bg);
+            border: 2px solid var(--player-border);
+            border-radius: 8px 8px 0 0;
             box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-            padding: 2px;
-            margin-bottom: 20px;
+            padding: 5px;
+            position: relative;
+            z-index: 2; /* Sit above background */
         }
 
         /* Title Bar */
         .title-bar {
-            background: var(--accent-bar);
-            color: white; padding: 3px; font-weight: bold; font-size: 11px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 2px;
-        }
-        .win-btn-group { display: flex; gap: 2px; }
-        .win-btn {
-            width: 14px; height: 14px; background: var(--win-gray);
-            border: 1px solid;
-            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
-            font-size: 8px; line-height: 12px; text-align: center; color: black;
-            box-shadow: none; padding: 0; cursor: default;
+            background: linear-gradient(90deg, var(--highlight), #222);
+            color: white; padding: 3px 6px; font-weight: bold; font-size: 11px;
+            display: flex; justify-content: space-between; cursor: pointer;
+            border: 1px solid #fff; margin-bottom: 5px;
         }
 
-        /* Main Display (LCD) */
-        .lcd-panel {
-            background: #000;
-            border: 2px inset;
-            border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
-            margin: 4px; padding: 10px;
-            color: #00ff00; font-family: 'Courier New', monospace;
-            text-shadow: 0 0 3px #00ff00;
+        /* Main LCD */
+        .lcd-display {
+            background: var(--screen-bg);
+            border: 2px inset #555;
+            padding: 10px; margin-bottom: 10px;
+            color: var(--screen-text);
+            font-family: 'VT323', monospace;
+            text-shadow: 0 0 5px var(--screen-text);
         }
-        .lcd-main { font-size: 20px; white-space: nowrap; overflow: hidden; }
-        .lcd-sub { font-size: 12px; color: #00aa00; margin-top: 5px; display: flex; justify-content: space-between; }
+        
+        .big-time { font-size: 32px; line-height: 1; }
+        .scroller { white-space: nowrap; overflow: hidden; font-size: 14px; margin-bottom: 5px;}
 
-        /* Playlist Container */
-        .playlist-frame {
+        /* Playlist Window (Attached Bottom) */
+        #playlist-shell {
+            width: 340px;
             background: #fff;
-            border: 2px inset;
-            border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
-            height: 180px;
-            overflow-y: hidden; /* Hide scrollbar for clean photo */
+            border: 2px solid var(--player-border);
+            border-top: none;
+            height: 200px;
+            overflow-y: auto;
             font-size: 11px;
-            margin: 4px;
+            position: relative;
+            z-index: 1;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
         }
 
-        .pl-row {
-            display: flex; padding: 3px 5px; border-bottom: 1px dotted #ccc;
-            cursor: pointer;
-        }
-        .pl-row:hover { background: #ffccff; }
-        .pl-row.active { background: var(--accent-pink); color: white; }
-        
-        .pl-num { width: 20px; }
-        .pl-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pl-time { width: 30px; text-align: right; }
+        table { width: 100%; border-collapse: collapse; }
+        tr { border-bottom: 1px dotted #ccc; cursor: pointer; }
+        tr:hover { background: #eee; }
+        td { padding: 4px; }
+        .active-row { background: var(--highlight) !important; color: white; }
 
-        /* Chunk Controls */
-        .controls {
-            display: flex; justify-content: center; gap: 4px; padding: 6px;
+        /* Draggable Sticker Class */
+        .sticker {
+            position: absolute; font-size: 30px; cursor: grab; z-index: 10;
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3));
         }
-        .chunk-btn {
-            background: var(--win-gray);
-            border: 2px solid;
-            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
-            padding: 5px 15px; font-size: 10px; font-weight: bold;
-            cursor: pointer;
-        }
-        .chunk-btn:active { border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark); transform: translate(1px, 1px); }
 
-        /* --- THE EDITOR TOOLS --- */
-        #editor-panel {
-            width: 340px; background: #333; color: white; padding: 10px;
-            border: 1px solid #555;
+        /* --- CONTROLS AREA (Hidden in photo) --- */
+        #controls {
+            margin-top: 30px; width: 95%; max-width: 400px;
+            background: #222; border: 1px solid #444; padding: 15px;
+            color: white; border-radius: 8px;
         }
         
-        .tool-btn {
-            display: block; width: 100%; padding: 10px; margin-bottom: 10px;
-            background: #ff0080; border: none; color: white; font-weight: bold; cursor: pointer;
+        textarea { 
+            width: 100%; height: 80px; background: #000; color: #0f0; 
+            border: 1px solid #555; font-family: monospace; font-size: 12px;
+            padding: 5px; box-sizing: border-box;
         }
-        
-        /* The Cleanup List */
-        #draft-list {
-            background: #222; max-height: 150px; overflow-y: auto; 
-            margin-bottom: 10px; border: 1px solid #555; display: none;
+
+        .btn {
+            background: #444; color: white; border: 1px solid #777;
+            padding: 8px 12px; margin: 4px; cursor: pointer; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .draft-item {
-            padding: 5px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; font-size: 12px;
-        }
-        .del-btn { color: red; font-weight: bold; cursor: pointer; padding: 0 5px; }
+        .btn:hover { background: #555; }
+        .btn-action { background: var(--highlight); border-color: #fff; font-weight: bold; }
 
     </style>
 </head>
 <body>
 
-<div id="player-window">
-    <div class="title-bar">
-        <span>💖 WinPlay 98</span>
-        <div class="win-btn-group">
-            <button class="win-btn">_</button>
-            <button class="win-btn">□</button>
-            <button class="win-btn">X</button>
+<div id="player-zone">
+    <div id="winamp-shell">
+        <div class="title-bar">
+            <span>WINAMP_2003.EXE</span>
+            <span>_ □ X</span>
+        </div>
+        
+        <div class="lcd-display">
+            <div class="scroller">*** WELCOME TO THE Y2K ZONE ***</div>
+            <div style="display:flex; justify-content:space-between; align-items:end;">
+                <span class="big-time">00:00</span>
+                <span>128kbps stereo</span>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:5px; height:25px;">
+            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
+            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
+            <div style="flex:2; background:var(--btn-style); border-radius:3px;"></div>
+            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
+            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
         </div>
     </div>
 
-    <div class="lcd-panel">
-        <div class="lcd-main" id="lcd-text">READY...</div>
-        <div class="lcd-sub">
-            <span>STEREO</span>
-            <span>128 KBPS</span>
-            <span id="lcd-time">00:00</span>
-        </div>
-    </div>
-
-    <div class="playlist-frame" id="final-list">
-        <div class="pl-row active">
-            <div class="pl-num">1.</div>
-            <div class="pl-title" contenteditable="true">Tap "Import" below...</div>
-            <div class="pl-time" contenteditable="true">3:45</div>
-        </div>
-        <div class="pl-row">
-            <div class="pl-num">2.</div>
-            <div class="pl-title" contenteditable="true">...to load your screenshot!</div>
-            <div class="pl-time" contenteditable="true">2:10</div>
-        </div>
-    </div>
-
-    <div class="controls">
-        <button class="chunk-btn">PREV</button>
-        <button class="chunk-btn">PLAY</button>
-        <button class="chunk-btn">PAUSE</button>
-        <button class="chunk-btn">STOP</button>
-        <button class="chunk-btn">NEXT</button>
+    <div id="playlist-shell">
+        <table id="pl-table">
+            <tbody>
+                <tr class="active-row"><td>1. Paste your songs below!</td><td>3:45</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
-<div id="editor-panel">
-    <p style="margin:0 0 10px 0; font-size:12px;">📸 IMPORT PLAYLIST</p>
+<div id="controls">
+    <h3 style="margin-top:0; color:hotpink;">1. PASTE LIST</h3>
+    <p style="font-size:11px; color:#aaa;">(Paste a list of songs from anywhere here)</p>
+    <textarea id="paste-box" placeholder="Britney Spears - Toxic&#10;Linkin Park - Numb&#10;..."></textarea>
+    <button class="btn btn-action" onclick="generateList()" style="width:100%;">⚡ GENERATE PLAYLIST</button>
     
-    <button class="tool-btn" onclick="document.getElementById('screen-input').click()">1. Upload Screenshot</button>
-    <input type="file" id="screen-input" accept="image/*" style="display:none;" onchange="readImage(this)">
+    <hr style="border-color:#444; margin:15px 0;">
     
-    <div id="status-msg" style="font-size:11px; color:yellow; margin-bottom:5px;"></div>
-    <div id="draft-list">
-        </div>
+    <h3 style="margin-top:0; color:cyan;">2. CUSTOMIZE</h3>
+    <button class="btn" onclick="setSkin('silver')">💾 Silver</button>
+    <button class="btn" onclick="setSkin('pink')">💖 Bratz</button>
+    <button class="btn" onclick="setSkin('matrix')">👽 Matrix</button>
+    <button class="btn" onclick="setSkin('glass')">🧊 Aero</button>
+    
+    <br><br>
+    <div style="background:#333; padding:5px;">
+        <span style="font-size:12px;">Add Sticker:</span>
+        <button class="btn" onclick="addSticker('🦋')">🦋</button>
+        <button class="btn" onclick="addSticker('⭐')">⭐</button>
+        <button class="btn" onclick="addSticker('💿')">💿</button>
+        <button class="btn" onclick="addSticker('👽')">👽</button>
+        <button class="btn" onclick="addSticker('🔥')">🔥</button>
+        <button class="btn" onclick="clearStickers()">❌ Clear</button>
+    </div>
 
-    <button class="tool-btn" style="background:#444;" onclick="pushToPlayer()">2. Update Player</button>
-    <button class="tool-btn" style="background:#00aa00;" onclick="saveImage()">3. Save Image</button>
+    <br>
+    <button class="btn btn-action" onclick="saveImage()" style="width:100%; padding:15px; font-size:14px; background:#00ff00; color:black;">📸 SAVE IMAGE</button>
 </div>
 
 <script>
-    let rawLines = [];
-
-    // 1. READ IMAGE
-    function readImage(input) {
-        if (!input.files || !input.files[0]) return;
+    // 1. GENERATE PLAYLIST FROM TEXT
+    function generateList() {
+        const text = document.getElementById('paste-box').value;
+        const lines = text.split('\n').filter(line => line.trim() !== "");
+        const tbody = document.querySelector("#pl-table tbody");
         
-        const msg = document.getElementById('status-msg');
-        msg.innerText = "⏳ Scanning image... please wait...";
-        document.getElementById('draft-list').style.display = 'block';
+        if (lines.length === 0) return;
 
-        Tesseract.recognize(
-            input.files[0],
-            'eng'
-        ).then(({ data: { text } }) => {
-            msg.innerText = "✅ Done! Delete the junk below:";
-            
-            // Filter empty lines
-            rawLines = text.split('\n').filter(l => l.trim().length > 1);
-            
-            renderDrafts();
-        });
-    }
+        tbody.innerHTML = ""; // Clear current
 
-    // 2. RENDER DRAFT LIST (For Cleanup)
-    function renderDrafts() {
-        const container = document.getElementById('draft-list');
-        container.innerHTML = "";
-        
-        rawLines.forEach((line, index) => {
-            const div = document.createElement('div');
-            div.className = 'draft-item';
-            div.innerHTML = `
-                <span contenteditable="true" style="width:85%">${line}</span>
-                <span class="del-btn" onclick="removeLine(${index})">X</span>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    // 3. REMOVE LINE
-    function removeLine(index) {
-        rawLines.splice(index, 1);
-        renderDrafts();
-    }
-
-    // 4. PUSH TO PLAYER
-    function pushToPlayer() {
-        // Re-read from the DOM in case user edited text
-        const currentItems = document.querySelectorAll('.draft-item span:first-child');
-        const finalList = document.getElementById('final-list');
-        finalList.innerHTML = "";
-
-        // If list is empty, don't crash
-        if(currentItems.length === 0) return;
-
-        // Set LCD to first track
-        document.getElementById('lcd-text').innerText = "*** " + currentItems[0].innerText + " ***";
-
-        currentItems.forEach((item, i) => {
-            // Fake time gen
+        lines.forEach((line, index) => {
+            // Random time generator
             const min = Math.floor(Math.random() * 3) + 2;
             let sec = Math.floor(Math.random() * 60);
-            if(sec < 10) sec = "0" + sec;
+            if (sec < 10) sec = "0" + sec;
+            
+            // Clean up the text (remove Spotify junk if present)
+            let cleanText = line.replace(/http\S+/g, "").trim();
+            if (cleanText.length > 40) cleanText = cleanText.substring(0, 40) + "...";
 
-            const row = `
-            <div class="pl-row ${i === 0 ? 'active' : ''}">
-                <div class="pl-num">${i + 1}.</div>
-                <div class="pl-title" contenteditable="true">${item.innerText}</div>
-                <div class="pl-time" contenteditable="true">${min}:${sec}</div>
-            </div>`;
-            finalList.innerHTML += row;
+            const row = `<tr>
+                <td>${index + 1}. ${cleanText}</td>
+                <td style="text-align:right;">${min}:${sec}</td>
+            </tr>`;
+            tbody.innerHTML += row;
         });
-        
-        document.getElementById('draft-list').style.display = 'none';
-        document.getElementById('status-msg').innerText = "✨ Player Updated!";
+
+        // Set the marquee to the first song
+        document.querySelector('.scroller').innerText = "*** " + lines[0] + " ***";
     }
 
-    // 5. SAVE
+    // 2. SKIN ENGINE
+    function setSkin(type) {
+        const root = document.documentElement;
+        if (type === 'silver') {
+            root.style.setProperty('--player-bg', 'linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 100%)');
+            root.style.setProperty('--screen-bg', '#000');
+            root.style.setProperty('--screen-text', '#00ff00');
+            root.style.setProperty('--highlight', '#000080');
+            root.style.setProperty('--btn-style', 'radial-gradient(circle, #fff, #999)');
+        } else if (type === 'pink') {
+            root.style.setProperty('--player-bg', 'linear-gradient(180deg, #ff99cc 0%, #ff66b2 100%)');
+            root.style.setProperty('--screen-bg', '#fff0f5');
+            root.style.setProperty('--screen-text', '#ff0066');
+            root.style.setProperty('--highlight', '#ff0099');
+            root.style.setProperty('--btn-style', 'radial-gradient(circle, #ffe6f2, #ff66b2)');
+        } else if (type === 'matrix') {
+            root.style.setProperty('--player-bg', '#000');
+            root.style.setProperty('--player-border', '#00ff00');
+            root.style.setProperty('--screen-bg', '#001100');
+            root.style.setProperty('--screen-text', '#00ff00');
+            root.style.setProperty('--highlight', '#003300');
+            root.style.setProperty('--btn-style', '#005500');
+        } else if (type === 'glass') {
+            root.style.setProperty('--player-bg', 'rgba(200, 240, 255, 0.6)');
+            root.style.setProperty('--player-border', 'rgba(255,255,255,0.8)');
+            root.style.setProperty('--screen-bg', 'rgba(0,0,0,0.5)');
+            root.style.setProperty('--screen-text', '#00ffff');
+            root.style.setProperty('--highlight', 'rgba(0,100,255,0.5)');
+            root.style.setProperty('--btn-style', 'rgba(255,255,255,0.4)');
+        }
+    }
+
+    // 3. STICKER SYSTEM
+    function addSticker(emoji) {
+        const zone = document.getElementById('player-zone');
+        const s = document.createElement('div');
+        s.className = 'sticker';
+        s.innerText = emoji;
+        
+        // Random position
+        s.style.left = Math.random() * 250 + 'px';
+        s.style.top = Math.random() * 200 + 'px';
+        s.style.transform = `rotate(${Math.random() * 40 - 20}deg)`;
+        
+        zone.appendChild(s);
+    }
+    
+    function clearStickers() {
+        document.querySelectorAll('.sticker').forEach(el => el.remove());
+    }
+
+    // 4. SAVE IMAGE
     function saveImage() {
-        html2canvas(document.getElementById('player-window'), { scale: 3, backgroundColor: null }).then(canvas => {
-            const link = document.createElement("a");
-            link.download = "win98-playlist.png";
+        const element = document.getElementById('player-zone');
+        html2canvas(element, { scale: 3, backgroundColor: null }).then(canvas => {
+            let link = document.createElement("a");
+            link.download = "y2k-playlist.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
