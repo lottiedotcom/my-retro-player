@@ -3,272 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2K Ultimate Builder</title>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen&display=swap" rel="stylesheet">
+    <title>Y2K Magic Scanner</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=VT323&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            /* Default: SILVER METAL */
-            --bg-body: #111;
-            --player-bg: linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 100%);
-            --player-border: #fff;
-            --screen-bg: #000;
-            --screen-text: #00ff00;
-            --highlight: #000080;
-            --btn-style: radial-gradient(circle, #fff, #999);
-            --font-main: 'Tahoma', sans-serif;
+            --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+            --border-light: rgba(255,255,255,0.6);
+            --jelly-btn: linear-gradient(180deg, #ffccff 0%, #ff66b2 100%);
+            --accent: #ff0099;
         }
 
         body {
-            background: var(--bg-body);
-            background-image: radial-gradient(#333 1px, transparent 1px);
-            background-size: 20px 20px;
-            font-family: var(--font-main);
+            background: #ff99cc;
+            background-image: 
+                radial-gradient(circle at 20% 20%, #ffcce6 0%, transparent 20%),
+                radial-gradient(circle at 80% 80%, #ccf2ff 0%, transparent 20%);
+            background-size: 100% 100%;
+            font-family: 'Fredoka', sans-serif;
             display: flex; flex-direction: column; align-items: center;
             padding: 10px; margin: 0; min-height: 100vh;
         }
 
-        /* --- THE PLAYER (This is what we save) --- */
-        #player-zone {
+        /* --- THE AESTHETIC PLAYER --- */
+        #player-shell {
+            width: 95%; max-width: 380px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 2px solid var(--border-light);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 
+                0 15px 35px rgba(255, 0, 153, 0.2),
+                inset 0 0 20px rgba(255,255,255,0.3);
             position: relative;
-            padding: 20px; 
-            /* Transparent container for stickers to overhang */
+            margin-bottom: 20px;
         }
 
-        #winamp-shell {
-            width: 340px;
-            background: var(--player-bg);
-            border: 2px solid var(--player-border);
-            border-radius: 8px 8px 0 0;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-            padding: 5px;
-            position: relative;
-            z-index: 2; /* Sit above background */
+        /* Top Bar */
+        .status-bar {
+            display: flex; justify-content: space-between;
+            color: #fff; font-size: 12px; font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+            cursor: default;
         }
 
-        /* Title Bar */
-        .title-bar {
-            background: linear-gradient(90deg, var(--highlight), #222);
-            color: white; padding: 3px 6px; font-weight: bold; font-size: 11px;
-            display: flex; justify-content: space-between; cursor: pointer;
-            border: 1px solid #fff; margin-bottom: 5px;
+        /* The Screen */
+        .screen-area {
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+            margin-bottom: 15px;
         }
 
-        /* Main LCD */
-        .lcd-display {
-            background: var(--screen-bg);
-            border: 2px inset #555;
-            padding: 10px; margin-bottom: 10px;
-            color: var(--screen-text);
-            font-family: 'VT323', monospace;
-            text-shadow: 0 0 5px var(--screen-text);
+        /* Visualizer Bars */
+        .viz-container {
+            display: flex; gap: 3px; height: 30px; align-items: flex-end; margin-bottom: 5px;
+        }
+        .v-bar {
+            flex: 1; background: linear-gradient(to top, #00ff00, #ccff00);
+            border-radius: 2px;
+            animation: bounce 0.5s infinite alternate;
+        }
+        .v-bar:nth-child(even) { animation-duration: 0.3s; }
+        .v-bar:nth-child(odd) { animation-duration: 0.6s; }
+        @keyframes bounce { 0% { height: 10%; } 100% { height: 100%; } }
+
+        /* Song Info */
+        .track-info {
+            font-family: 'VT323', monospace; color: #00ff00; font-size: 20px;
+            white-space: nowrap; overflow: hidden; text-shadow: 0 0 5px #00ff00;
         }
         
-        .big-time { font-size: 32px; line-height: 1; }
-        .scroller { white-space: nowrap; overflow: hidden; font-size: 14px; margin-bottom: 5px;}
-
-        /* Playlist Window (Attached Bottom) */
-        #playlist-shell {
-            width: 340px;
-            background: #fff;
-            border: 2px solid var(--player-border);
-            border-top: none;
-            height: 200px;
+        /* Playlist List */
+        .playlist-box {
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            height: 180px;
             overflow-y: auto;
-            font-size: 11px;
-            position: relative;
-            z-index: 1;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-        }
-
-        table { width: 100%; border-collapse: collapse; }
-        tr { border-bottom: 1px dotted #ccc; cursor: pointer; }
-        tr:hover { background: #eee; }
-        td { padding: 4px; }
-        .active-row { background: var(--highlight) !important; color: white; }
-
-        /* Draggable Sticker Class */
-        .sticker {
-            position: absolute; font-size: 30px; cursor: grab; z-index: 10;
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3));
-        }
-
-        /* --- CONTROLS AREA (Hidden in photo) --- */
-        #controls {
-            margin-top: 30px; width: 95%; max-width: 400px;
-            background: #222; border: 1px solid #444; padding: 15px;
-            color: white; border-radius: 8px;
+            border: 2px inset rgba(255,255,255,0.5);
         }
         
-        textarea { 
-            width: 100%; height: 80px; background: #000; color: #0f0; 
-            border: 1px solid #555; font-family: monospace; font-size: 12px;
-            padding: 5px; box-sizing: border-box;
+        .pl-row {
+            display: flex; padding: 8px; border-bottom: 1px dashed #ff99cc;
+            font-size: 12px; color: #444; cursor: text; transition: 0.2s;
         }
+        .pl-row:last-child { border-bottom: none; }
+        .pl-row:hover { background: #fff0f5; }
+        .pl-idx { width: 25px; color: var(--accent); font-weight: bold; }
+        .pl-name { flex: 1; }
+        .pl-time { font-family: 'VT323', monospace; font-size: 16px; color: #888; }
 
-        .btn {
-            background: #444; color: white; border: 1px solid #777;
-            padding: 8px 12px; margin: 4px; cursor: pointer; font-size: 11px;
-            text-transform: uppercase; letter-spacing: 1px;
+        /* Jelly Buttons */
+        .controls {
+            display: flex; justify-content: center; gap: 10px; margin-top: 15px;
         }
-        .btn:hover { background: #555; }
-        .btn-action { background: var(--highlight); border-color: #fff; font-weight: bold; }
+        .jelly-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%; border: none;
+            background: var(--jelly-btn);
+            box-shadow: 0 5px 15px rgba(255, 102, 178, 0.4), inset 0 2px 5px rgba(255,255,255,0.8);
+            color: white; font-size: 18px; cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .jelly-btn:active { transform: scale(0.9); }
+
+        /* --- THE MAGIC TOOLS --- */
+        #magic-tools {
+            width: 95%; max-width: 380px;
+            background: #fff; border-radius: 15px; padding: 20px;
+            text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .upload-zone {
+            border: 2px dashed #ff99cc; border-radius: 10px;
+            padding: 20px; color: #ff66b2; font-weight: bold;
+            margin-bottom: 10px; cursor: pointer;
+            background: #fff0f5;
+        }
+        .upload-zone:hover { background: #ffe6f2; }
+        
+        #loading-msg { display: none; color: var(--accent); font-weight: bold; margin: 10px 0; }
+        
+        .action-btn {
+            background: var(--accent); color: white; border: none;
+            padding: 12px 20px; border-radius: 30px; font-weight: bold;
+            font-size: 14px; width: 100%; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 0, 153, 0.3);
+        }
 
     </style>
 </head>
 <body>
 
-<div id="player-zone">
-    <div id="winamp-shell">
-        <div class="title-bar">
-            <span>WINAMP_2003.EXE</span>
-            <span>_ □ X</span>
-        </div>
-        
-        <div class="lcd-display">
-            <div class="scroller">*** WELCOME TO THE Y2K ZONE ***</div>
-            <div style="display:flex; justify-content:space-between; align-items:end;">
-                <span class="big-time">00:00</span>
-                <span>128kbps stereo</span>
-            </div>
-        </div>
+<div id="player-shell">
+    <div class="status-bar">
+        <span>✨ iMusic Girl 2004</span>
+        <span>♥ 100%</span>
+    </div>
 
-        <div style="display:flex; gap:5px; height:25px;">
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:2; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
-            <div style="flex:1; background:var(--btn-style); border-radius:3px;"></div>
+    <div class="screen-area">
+        <div class="viz-container">
+            <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+            <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+            <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+        </div>
+        <div class="track-info" id="marquee">Waiting for playlist...</div>
+    </div>
+
+    <div class="playlist-box" id="pl-container">
+        <div class="pl-row">
+            <div class="pl-idx">1</div>
+            <div class="pl-name" contenteditable="true">Upload a screenshot...</div>
+            <div class="pl-time" contenteditable="true">0:00</div>
+        </div>
+        <div class="pl-row">
+            <div class="pl-idx">2</div>
+            <div class="pl-name" contenteditable="true">...and I will read it!</div>
+            <div class="pl-time" contenteditable="true">0:00</div>
         </div>
     </div>
 
-    <div id="playlist-shell">
-        <table id="pl-table">
-            <tbody>
-                <tr class="active-row"><td>1. Paste your songs below!</td><td>3:45</td></tr>
-            </tbody>
-        </table>
+    <div class="controls">
+        <button class="jelly-btn">⏮</button>
+        <button class="jelly-btn">▶</button>
+        <button class="jelly-btn">⏭</button>
     </div>
 </div>
 
-<div id="controls">
-    <h3 style="margin-top:0; color:hotpink;">1. PASTE LIST</h3>
-    <p style="font-size:11px; color:#aaa;">(Paste a list of songs from anywhere here)</p>
-    <textarea id="paste-box" placeholder="Britney Spears - Toxic&#10;Linkin Park - Numb&#10;..."></textarea>
-    <button class="btn btn-action" onclick="generateList()" style="width:100%;">⚡ GENERATE PLAYLIST</button>
+<div id="magic-tools">
+    <h3 style="margin-top:0; color: #ff66b2;">🔮 Magic Playlist Reader</h3>
     
-    <hr style="border-color:#444; margin:15px 0;">
-    
-    <h3 style="margin-top:0; color:cyan;">2. CUSTOMIZE</h3>
-    <button class="btn" onclick="setSkin('silver')">💾 Silver</button>
-    <button class="btn" onclick="setSkin('pink')">💖 Bratz</button>
-    <button class="btn" onclick="setSkin('matrix')">👽 Matrix</button>
-    <button class="btn" onclick="setSkin('glass')">🧊 Aero</button>
-    
-    <br><br>
-    <div style="background:#333; padding:5px;">
-        <span style="font-size:12px;">Add Sticker:</span>
-        <button class="btn" onclick="addSticker('🦋')">🦋</button>
-        <button class="btn" onclick="addSticker('⭐')">⭐</button>
-        <button class="btn" onclick="addSticker('💿')">💿</button>
-        <button class="btn" onclick="addSticker('👽')">👽</button>
-        <button class="btn" onclick="addSticker('🔥')">🔥</button>
-        <button class="btn" onclick="clearStickers()">❌ Clear</button>
+    <div class="upload-zone" onclick="document.getElementById('img-upload').click()">
+        📸 Tap to Upload Screenshot
+        <p style="font-size:10px; opacity:0.7; margin:5px 0;">(Spotify, Apple Music, Notes)</p>
     </div>
-
-    <br>
-    <button class="btn btn-action" onclick="saveImage()" style="width:100%; padding:15px; font-size:14px; background:#00ff00; color:black;">📸 SAVE IMAGE</button>
+    <input type="file" id="img-upload" accept="image/*" style="display:none" onchange="processImage(this)">
+    
+    <div id="loading-msg">✨ Scanning your image... (This takes a sec)</div>
+    
+    <button class="action-btn" onclick="saveImage()">💾 Save Cute Image</button>
 </div>
 
 <script>
-    // 1. GENERATE PLAYLIST FROM TEXT
-    function generateList() {
-        const text = document.getElementById('paste-box').value;
-        const lines = text.split('\n').filter(line => line.trim() !== "");
-        const tbody = document.querySelector("#pl-table tbody");
+    // --- THE MAGIC SCANNER LOGIC ---
+    function processImage(input) {
+        if (!input.files || !input.files[0]) return;
         
-        if (lines.length === 0) return;
+        const file = input.files[0];
+        const loading = document.getElementById('loading-msg');
+        const container = document.getElementById('pl-container');
+        
+        loading.style.display = "block";
+        loading.innerText = "✨ Reading text pixels...";
 
-        tbody.innerHTML = ""; // Clear current
-
-        lines.forEach((line, index) => {
-            // Random time generator
-            const min = Math.floor(Math.random() * 3) + 2;
-            let sec = Math.floor(Math.random() * 60);
-            if (sec < 10) sec = "0" + sec;
+        // Use Tesseract.js to read the image
+        Tesseract.recognize(
+            file,
+            'eng',
+            { logger: m => console.log(m) } // Check console if stuck
+        ).then(({ data: { text } }) => {
+            loading.style.display = "none";
             
-            // Clean up the text (remove Spotify junk if present)
-            let cleanText = line.replace(/http\S+/g, "").trim();
-            if (cleanText.length > 40) cleanText = cleanText.substring(0, 40) + "...";
+            // Clean up the text results
+            const lines = text.split('\n').filter(line => {
+                const l = line.trim();
+                return l.length > 4 && !l.includes('%') && !l.includes(':'); // Try to filter out UI junk
+            });
 
-            const row = `<tr>
-                <td>${index + 1}. ${cleanText}</td>
-                <td style="text-align:right;">${min}:${sec}</td>
-            </tr>`;
-            tbody.innerHTML += row;
+            // Build the new list
+            container.innerHTML = "";
+            
+            if (lines.length === 0) {
+                container.innerHTML = `<div style="padding:10px; color:pink;">Could not read text! Try a clearer screenshot :(</div>`;
+                return;
+            }
+
+            // Update Marquee
+            document.getElementById('marquee').innerText = "*** " + lines[0] + " ***";
+
+            lines.forEach((line, i) => {
+                // Random fake time
+                const min = Math.floor(Math.random() * 3) + 2;
+                let sec = Math.floor(Math.random() * 60);
+                if (sec < 10) sec = "0" + sec;
+                
+                const row = `
+                <div class="pl-row">
+                    <div class="pl-idx">${i + 1}</div>
+                    <div class="pl-name" contenteditable="true">${line}</div>
+                    <div class="pl-time" contenteditable="true">${min}:${sec}</div>
+                </div>`;
+                container.innerHTML += row;
+            });
+        }).catch(err => {
+            loading.innerText = "Error reading image :(";
+            console.error(err);
         });
-
-        // Set the marquee to the first song
-        document.querySelector('.scroller').innerText = "*** " + lines[0] + " ***";
     }
 
-    // 2. SKIN ENGINE
-    function setSkin(type) {
-        const root = document.documentElement;
-        if (type === 'silver') {
-            root.style.setProperty('--player-bg', 'linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 100%)');
-            root.style.setProperty('--screen-bg', '#000');
-            root.style.setProperty('--screen-text', '#00ff00');
-            root.style.setProperty('--highlight', '#000080');
-            root.style.setProperty('--btn-style', 'radial-gradient(circle, #fff, #999)');
-        } else if (type === 'pink') {
-            root.style.setProperty('--player-bg', 'linear-gradient(180deg, #ff99cc 0%, #ff66b2 100%)');
-            root.style.setProperty('--screen-bg', '#fff0f5');
-            root.style.setProperty('--screen-text', '#ff0066');
-            root.style.setProperty('--highlight', '#ff0099');
-            root.style.setProperty('--btn-style', 'radial-gradient(circle, #ffe6f2, #ff66b2)');
-        } else if (type === 'matrix') {
-            root.style.setProperty('--player-bg', '#000');
-            root.style.setProperty('--player-border', '#00ff00');
-            root.style.setProperty('--screen-bg', '#001100');
-            root.style.setProperty('--screen-text', '#00ff00');
-            root.style.setProperty('--highlight', '#003300');
-            root.style.setProperty('--btn-style', '#005500');
-        } else if (type === 'glass') {
-            root.style.setProperty('--player-bg', 'rgba(200, 240, 255, 0.6)');
-            root.style.setProperty('--player-border', 'rgba(255,255,255,0.8)');
-            root.style.setProperty('--screen-bg', 'rgba(0,0,0,0.5)');
-            root.style.setProperty('--screen-text', '#00ffff');
-            root.style.setProperty('--highlight', 'rgba(0,100,255,0.5)');
-            root.style.setProperty('--btn-style', 'rgba(255,255,255,0.4)');
-        }
-    }
-
-    // 3. STICKER SYSTEM
-    function addSticker(emoji) {
-        const zone = document.getElementById('player-zone');
-        const s = document.createElement('div');
-        s.className = 'sticker';
-        s.innerText = emoji;
-        
-        // Random position
-        s.style.left = Math.random() * 250 + 'px';
-        s.style.top = Math.random() * 200 + 'px';
-        s.style.transform = `rotate(${Math.random() * 40 - 20}deg)`;
-        
-        zone.appendChild(s);
-    }
-    
-    function clearStickers() {
-        document.querySelectorAll('.sticker').forEach(el => el.remove());
-    }
-
-    // 4. SAVE IMAGE
+    // --- SAVE IMAGE ---
     function saveImage() {
-        const element = document.getElementById('player-zone');
+        const element = document.getElementById('player-shell');
+        // Temporarily hide marquee animation for cleaner screenshot if needed
         html2canvas(element, { scale: 3, backgroundColor: null }).then(canvas => {
             let link = document.createElement("a");
-            link.download = "y2k-playlist.png";
+            link.download = "my-cute-playlist.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
