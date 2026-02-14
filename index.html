@@ -3,213 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2K Cyber Player</title>
+    <title>Y2K Aero Card Maker</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
-            --silver: #c0c0c0;
-            --dark: #444;
-            --pink-light: #ffccff;
-            --pink-hot: #ff0099;
-            --lcd-bg: #000;
-            --lcd-text: #00ff00;
+            --glass: rgba(255, 255, 255, 0.25);
+            --border: rgba(255, 255, 255, 0.6);
+            --shadow: rgba(0, 0, 0, 0.1);
+            --accent: #ff0099;
+            --gradient-bg: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
         }
 
         body {
-            background: #2d2d2d;
-            font-family: 'Tahoma', sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 10px; margin: 0; min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #222; /* Dark background to see the card better */
+            font-family: 'Varela Round', sans-serif;
+            overflow-x: hidden;
         }
 
-        /* --- THE PLAYER (This gets saved) --- */
-        #player-skin {
+        /* --- THE CARD (Capture Target) --- */
+        #card-container {
+            position: relative;
             width: 320px;
-            background: var(--silver);
-            border: 2px solid #fff;
-            border-right-color: #555; border-bottom-color: #555;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-            padding: 4px;
+            height: 520px;
+            border-radius: 30px;
+            background: var(--gradient-bg);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        /* The Glass Overlay */
+        .glass-panel {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            z-index: 2;
+            margin-bottom: 20px;
+        }
+
+        /* Album Art Area */
+        .art-box {
+            width: 240px;
+            height: 240px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            border: 4px solid rgba(255,255,255,0.8);
+            overflow: hidden;
+            z-index: 2;
+            cursor: pointer;
             position: relative;
+            transition: transform 0.2s;
+        }
+        .art-box:active { transform: scale(0.98); }
+        
+        #art-display {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        
+        .upload-hint {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #fff; text-align: center; font-size: 12px; pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
-        /* 1. Title Bar */
-        .title-bar {
-            background: linear-gradient(90deg, var(--pink-hot), #800040);
-            padding: 4px; color: white; font-weight: bold; font-size: 11px;
-            display: flex; justify-content: space-between; margin-bottom: 5px;
+        /* Song Info */
+        .info-area {
+            text-align: center;
+            margin-top: 25px;
+            z-index: 2;
+            width: 100%;
         }
 
-        /* 2. The LCD Screen */
-        .lcd-area {
-            background: var(--lcd-bg);
-            border: 2px inset #555;
-            padding: 10px; margin-bottom: 5px;
-            position: relative;
+        .song-title {
+            font-size: 24px; color: #fff; font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+            outline: none; cursor: text;
+        }
+        
+        .artist-name {
+            font-size: 16px; color: rgba(255,255,255,0.9);
+            margin-bottom: 15px;
+            outline: none; cursor: text;
         }
 
-        .lcd-text {
-            color: var(--lcd-text);
+        /* The Visualizer & Time */
+        .viz-wrapper {
+            width: 100%;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 20px; z-index: 2;
+            padding: 0 10px; box-sizing: border-box;
+        }
+        
+        .time-text {
             font-family: 'VT323', monospace;
-            font-size: 22px; white-space: nowrap; overflow: hidden;
-            text-shadow: 0 0 5px var(--lcd-text);
+            font-size: 18px; color: #fff;
         }
 
-        /* Fake Visualizer */
-        .viz {
-            display: flex; gap: 2px; height: 25px; align-items: flex-end; margin-top: 5px; opacity: 0.8;
+        .visualizer {
+            display: flex; gap: 4px; height: 20px; align-items: flex-end;
         }
         .bar {
-            flex: 1; background: var(--lcd-text);
-            animation: bounce 0.4s infinite alternate;
+            width: 6px; background: #fff; border-radius: 3px;
+            animation: bounce 0.6s infinite ease-in-out alternate;
+            box-shadow: 0 0 5px rgba(255,255,255,0.8);
         }
-        .bar:nth-child(odd) { animation-duration: 0.3s; }
-        .bar:nth-child(even) { animation-duration: 0.5s; }
-        @keyframes bounce { 0% { height: 10%; } 100% { height: 100%; } }
+        .bar:nth-child(1) { height: 40%; animation-delay: 0s; }
+        .bar:nth-child(2) { height: 80%; animation-delay: 0.2s; }
+        .bar:nth-child(3) { height: 50%; animation-delay: 0.4s; }
+        .bar:nth-child(4) { height: 90%; animation-delay: 0.1s; }
+        .bar:nth-child(5) { height: 60%; animation-delay: 0.3s; }
+        
+        @keyframes bounce { 
+            0% { transform: scaleY(0.3); opacity: 0.7; } 
+            100% { transform: scaleY(1); opacity: 1; } 
+        }
 
-        /* 3. Controls */
-        .controls { display: flex; gap: 3px; margin-bottom: 5px; }
+        /* Controls */
+        .controls {
+            display: flex; gap: 20px; z-index: 2; align-items: center;
+        }
+        
         .btn {
-            background: var(--silver); flex: 1;
-            border: 2px outset #fff; font-size: 10px; font-weight: bold;
-            cursor: pointer; padding: 5px 0;
+            background: rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            color: white; cursor: pointer;
+            backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: 0.2s;
         }
-        .btn:active { border: 2px inset #fff; }
+        .btn:hover { background: rgba(255,255,255,0.5); transform: translateY(-2px); }
+        .btn-sm { width: 45px; height: 45px; font-size: 18px; }
+        .btn-lg { width: 65px; height: 65px; font-size: 28px; background: rgba(255,255,255,0.5); }
 
-        /* 4. The Playlist */
-        .playlist-box {
-            background: #000;
-            border: 2px inset #555;
-            height: 180px; overflow-y: hidden;
-            font-family: 'VT323', monospace; color: var(--pink-light);
-            font-size: 16px;
+        /* --- SAVE BUTTON (Outside Card) --- */
+        #save-btn {
+            margin-top: 30px;
+            background: #ff0099; color: white;
+            border: none; padding: 15px 40px;
+            border-radius: 50px; font-size: 16px; font-weight: bold;
+            box-shadow: 0 0 20px #ff0099;
+            cursor: pointer;
+            font-family: 'Varela Round', sans-serif;
+            transition: 0.3s;
         }
-
-        .pl-row {
-            display: flex; padding: 2px 5px; cursor: text;
-        }
-        .pl-row:hover { background: #333; }
-        .pl-idx { width: 25px; color: #888; }
-        .pl-song { flex: 1; white-space: nowrap; overflow: hidden; }
-        .pl-time { width: 35px; text-align: right; color: var(--pink-hot); }
-
-        /* --- THE INPUT AREA (Hidden in photo) --- */
-        #input-area {
-            width: 320px; background: #fff; padding: 15px; margin-top: 20px;
-            border-radius: 8px; box-sizing: border-box;
-        }
-        textarea {
-            width: 100%; height: 100px; padding: 10px; box-sizing: border-box;
-            border: 2px solid #ccc; font-size: 12px;
-            margin-bottom: 10px;
-        }
-        .action-btn {
-            width: 100%; padding: 12px; background: var(--pink-hot); color: white;
-            border: none; font-weight: bold; cursor: pointer; border-radius: 4px;
-            margin-bottom: 5px;
+        #save-btn:active { transform: scale(0.95); box-shadow: 0 0 10px #ff0099; }
+        
+        .instructions {
+            color: #888; margin-bottom: 20px; font-size: 12px; text-align: center;
         }
 
     </style>
 </head>
 <body>
 
-<div id="player-skin">
-    <div class="title-bar">
-        <span>WinAmp_Player_v2.exe</span>
-        <span>X</span>
+    <div class="instructions">
+        ✨ Tap the square to add art.<br>
+        ✨ Tap the text to edit song details.
     </div>
 
-    <div class="lcd-area">
-        <div class="lcd-text" id="now-playing">*** WAITING FOR MUSIC ***</div>
-        <div class="viz">
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div id="card-container">
+        <div class="glass-panel"></div>
+        
+        <div class="top-bar">
+            <span>iPod</span>
+            <span>10:42 PM</span>
+            <span>🔋</span>
         </div>
-        <div style="color:#00ff00; font-family:'VT323'; font-size:14px; margin-top:2px; display:flex; justify-content:space-between;">
-            <span>128kbps</span>
-            <span>00:00</span>
+
+        <div class="art-box" onclick="document.getElementById('file-input').click()">
+            <img id="art-display" src="https://via.placeholder.com/300/ffccff/ff0099?text=TAP+TO+ADD+ART" alt="Art">
+            <div class="upload-hint" id="hint-text">TAP TO UPLOAD</div>
+        </div>
+
+        <div class="info-area">
+            <div class="song-title" contenteditable="true" spellcheck="false">Super Bass</div>
+            <div class="artist-name" contenteditable="true" spellcheck="false">Nicki Minaj</div>
+        </div>
+
+        <div class="viz-wrapper">
+            <span class="time-text" contenteditable="true">0:14</span>
+            <div class="visualizer">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+            <span class="time-text" contenteditable="true">-3:20</span>
+        </div>
+
+        <div class="controls">
+            <div class="btn btn-sm">⏮</div>
+            <div class="btn btn-lg">▶</div>
+            <div class="btn btn-sm">⏭</div>
         </div>
     </div>
 
-    <div class="controls">
-        <button class="btn">PREV</button>
-        <button class="btn">PLAY</button>
-        <button class="btn">PAUSE</button>
-        <button class="btn">STOP</button>
-        <button class="btn">NEXT</button>
-    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="loadFile(this)">
 
-    <div class="playlist-box" id="pl-container">
-        <div class="pl-row"><span class="pl-idx">1.</span><span class="pl-song">Paste text below...</span><span class="pl-time">0:00</span></div>
-        <div class="pl-row"><span class="pl-idx">2.</span><span class="pl-song">...and click Generate!</span><span class="pl-time">0:00</span></div>
-    </div>
-</div>
+    <button id="save-btn" onclick="saveCard()">💾 SAVE AESTHETIC</button>
 
-<div id="input-area">
-    <h3 style="margin-top:0; color:#333;">📝 Smart Paste</h3>
-    <p style="font-size:11px; color:#666;">Copy your playlist text (from Spotify/Notes) and paste it here. I will try to clean it up!</p>
-    
-    <textarea id="raw-text" placeholder="Example:&#10;Toxic - Britney Spears&#10;Numb - Linkin Park"></textarea>
-    
-    <button class="action-btn" onclick="smartParse()">✨ Make It Cute</button>
-    <button class="action-btn" style="background:#444;" onclick="saveImage()">💾 Save Image</button>
-</div>
-
-<script>
-    function smartParse() {
-        const raw = document.getElementById('raw-text').value;
-        const container = document.getElementById('pl-container');
-        
-        // 1. Split by lines
-        let lines = raw.split('\n');
-        
-        // 2. Filter Junk (Remove empty lines, "Lyrics", short timestamps)
-        lines = lines.filter(line => {
-            let l = line.trim();
-            // Filter out common Spotify junk
-            if (l.length < 2) return false;
-            if (l.includes("Spotify")) return false;
-            if (l.match(/^\d+:\d+$/)) return false; // Removes just timestamps like "3:20"
-            return true;
-        });
-
-        // 3. Render
-        container.innerHTML = "";
-        
-        if (lines.length > 0) {
-            document.getElementById('now-playing').innerText = "*** " + lines[0] + " ***";
+    <script>
+        // 1. Handle Image Upload
+        function loadFile(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('art-display').src = e.target.result;
+                    document.getElementById('hint-text').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
-        lines.forEach((line, i) => {
-            // Fake Time Generator
-            let min = Math.floor(Math.random() * 3) + 2;
-            let sec = Math.floor(Math.random() * 60);
-            if(sec < 10) sec = "0" + sec;
-
-            // Clean the text slightly
-            let cleanText = line.replace(/http\S+/g, "").substring(0, 35);
-
-            let row = `
-            <div class="pl-row">
-                <span class="pl-idx">${i + 1}.</span>
-                <span class="pl-song" contenteditable="true">${cleanText}</span>
-                <span class="pl-time" contenteditable="true">${min}:${sec}</span>
-            </div>`;
-            container.innerHTML += row;
-        });
-    }
-
-    function saveImage() {
-        html2canvas(document.getElementById('player-skin'), { scale: 3, backgroundColor: null }).then(canvas => {
-            let link = document.createElement("a");
-            link.download = "y2k-playlist.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        });
-    }
-</script>
+        // 2. Save Function
+        function saveCard() {
+            const card = document.getElementById('card-container');
+            
+            // High quality capture
+            html2canvas(card, {
+                scale: 3, // Makes text crisp
+                backgroundColor: null, // Keeps rounded corners transparent
+                useCORS: true
+            }).then(canvas => {
+                let link = document.createElement("a");
+                link.download = "my-aero-card.png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        }
+    </script>
 
 </body>
 </html>
