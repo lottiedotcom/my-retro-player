@@ -3,246 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frutiger Aero Player</title>
+    <title>WinMedia Vista Player</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            /* Coconut Girl / Frutiger Palette */
-            --glass-pink: rgba(255, 105, 180, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --deep-pink: #ff1493;
-            --ocean-blue: #00bfff;
-            --lime: #32cd32;
+            /* Vista/XP Aesthetic Colors */
+            --glass-blue: #cceeff;
+            --glass-border: #6699cc;
+            --win-gray: #f0f0f0;
+            --win-text: #000;
+            --lcd-bg: #000;
+            --lcd-green: #00ff00;
         }
 
         body {
-            /* Frutiger Aero Background: Abstract Waves */
-            background: linear-gradient(180deg, #87CEFA 0%, #E0FFFF 50%, #FFB6C1 100%);
-            min-height: 100vh;
+            background-color: #3a6ea5; /* Classic Desktop Blue */
+            background-image: linear-gradient(135deg, #3a6ea5 0%, #004e98 100%);
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            font-family: 'Varela Round', sans-serif;
-            margin: 0;
-            overflow: hidden;
+            justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0;
+            font-family: 'Tahoma', sans-serif; /* The REAL Windows font */
         }
 
-        /* Bubbles Background decoration */
-        .bubble {
-            position: absolute; border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
-            z-index: -1;
-        }
-
-        /* --- THE PLAYER GADGET --- */
-        .aero-window {
+        /* --- THE WINDOW CONTAINER --- */
+        .window-shell {
             width: 340px;
-            /* The Vista Glass Effect */
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 51%, rgba(255,255,255,0.2) 100%);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255,255,255,0.7);
-            border-top: 2px solid rgba(255,255,255,0.9);
-            border-radius: 20px;
+            background: linear-gradient(to bottom, #f2f2f2 0%, #d4d4d4 100%);
+            border: 1px solid #999;
+            /* The "Vista" Glass Effect Frame */
             box-shadow: 
-                0 15px 35px rgba(0,0,0,0.2),
-                inset 0 0 30px rgba(255,255,255,0.6);
-            padding: 15px;
-            display: flex; flex-direction: column; gap: 15px;
+                0 0 0 4px rgba(200, 230, 255, 0.5), /* Glass glow */
+                0 10px 25px rgba(0,0,0,0.5); /* Drop shadow */
+            border-radius: 8px; /* Slightly rounded, but blocky */
+            padding: 4px;
             position: relative;
         }
 
-        /* Window Title Bar */
+        /* 1. Title Bar (Shiny Gradient) */
         .title-bar {
-            background: linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.2));
-            padding: 8px 15px;
-            border-radius: 10px;
-            color: var(--deep-pink);
-            font-weight: bold; font-size: 14px;
-            display: flex; justify-content: space-between; align-items: center;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.8);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            height: 25px;
+            /* The classic "Glossy" top bar split */
+            background: linear-gradient(to bottom, #8bb0dc 0%, #4676b5 50%, #2f61a6 51%, #27569d 100%);
+            border: 1px solid #23457a;
+            border-radius: 4px 4px 0 0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 8px;
+            color: white; font-weight: bold; font-size: 11px; text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+            margin-bottom: 4px;
+        }
+        
+        .win-controls { display: flex; gap: 2px; }
+        .win-btn-small {
+            width: 16px; height: 16px;
+            background: linear-gradient(#fff, #ccc);
+            border: 1px solid #fff; border-radius: 3px;
+            font-size: 10px; line-height: 14px; text-align: center; color: #555; cursor: default;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
 
-        /* Blocky Screen Area */
-        .screen-inset {
-            background: #000;
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 
-                inset 0 3px 8px rgba(0,0,0,0.8),
-                0 1px 0 rgba(255,255,255,0.5);
-            border-bottom: 2px solid rgba(255,255,255,0.1);
+        /* 2. Main Body Area */
+        .main-body {
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
+            border: 1px solid #888;
+            padding: 10px;
+            border-radius: 0 0 4px 4px;
         }
 
-        /* Album Art Frame */
+        /* Album Art Frame (Sunken 3D Look) */
         .art-frame {
-            width: 100%; height: 250px;
-            background: #222;
-            border-radius: 8px;
-            overflow: hidden;
+            width: 100%; height: 300px;
+            background: #000;
+            border: 2px solid #888;
+            /* "Inset" shadow makes it look sunk into the plastic */
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.6), border-bottom 1px solid #fff;
+            margin-bottom: 10px;
             position: relative;
             cursor: pointer;
-            border: 2px solid #444;
         }
         
-        .art-img { width: 100%; height: 100%; object-fit: cover; }
+        #art-img { width: 100%; height: 100%; object-fit: cover; display: block; }
         
-        /* Gloss Overlay on Art */
-        .gloss-reflection {
-            position: absolute; top: 0; left: 0; width: 100%; height: 50%;
-            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
-            pointer-events: none;
+        /* Hint Text Overlay */
+        .click-hint {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            color: #888; font-size: 11px; pointer-events: none;
+            background: rgba(0,0,0,0.8); padding: 5px; border-radius: 4px;
         }
 
-        /* Text Info */
-        .info-block {
-            margin-top: 10px;
-            color: var(--ocean-blue);
-        }
-        .song-title {
-            font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 4px;
-            font-family: 'Varela Round', sans-serif;
-            text-shadow: 0 0 10px var(--deep-pink);
-        }
-        .time-display {
-            font-family: 'Share Tech Mono', monospace;
-            color: var(--lime); font-size: 16px;
-            text-shadow: 0 0 5px var(--lime);
-            display: flex; justify-content: space-between;
-        }
-
-        /* Progress Bar (The "Blocky" Feel) */
-        .progress-track {
-            height: 12px; background: #333;
-            border-radius: 6px; margin-top: 8px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
-            position: relative; overflow: hidden;
-        }
-        .progress-fill {
-            width: 65%; height: 100%;
-            background: linear-gradient(90deg, var(--deep-pink), var(--ocean-blue));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
-            border-right: 1px solid #fff;
-        }
-        /* Striped Candy Pattern overlay */
-        .progress-track::after {
-            content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
-            background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.2) 5px, rgba(0,0,0,0.2) 10px);
-        }
-
-        /* Gel Buttons Container */
-        .controls-block {
-            background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
-            padding: 10px; border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.5);
+        /* 3. Info Display (LCD Style) */
+        .lcd-strip {
+            background: #000;
+            border: 2px inset #ccc;
+            padding: 8px;
+            margin-bottom: 10px;
             display: flex; justify-content: space-between; align-items: center;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
-        }
-
-        /* The Gel Orb Buttons */
-        .gel-btn {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            /* The "Vista" Gloss Gradient */
-            background: radial-gradient(circle at 50% 30%, #ffebf5 5%, #ff69b4 60%, #c71585 100%);
-            box-shadow: 
-                0 5px 10px rgba(0,0,0,0.2),
-                inset 0 2px 5px rgba(255,255,255,0.8),
-                inset 0 -2px 5px rgba(0,0,0,0.2);
-            border: 1px solid rgba(0,0,0,0.1);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; color: #fff; text-shadow: 0 -1px 1px rgba(0,0,0,0.3);
-            cursor: pointer; position: relative;
+            color: #00ff00; /* Classic Green LCD */
         }
         
-        .gel-btn::after {
-            content: ''; position: absolute; top: 2px; left: 10px; right: 10px; height: 20px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0));
-            border-radius: 50%;
+        .lcd-text {
+            font-family: 'Tahoma', sans-serif;
+            font-size: 12px; font-weight: bold;
+            white-space: nowrap; overflow: hidden; max-width: 220px;
+            color: #fff; /* Song title is white text */
+        }
+        
+        .lcd-time {
+            font-family: 'VT323', monospace;
+            font-size: 22px; color: #00ff00;
         }
 
-        .gel-btn-big {
-            width: 70px; height: 70px; font-size: 28px;
-            background: radial-gradient(circle at 50% 30%, #e0ffff 5%, #00bfff 60%, #00688b 100%);
+        /* 4. The Controls (Plastic Buttons) */
+        .controls-plate {
+            background: linear-gradient(to bottom, #e0e0e0 0%, #c0c0c0 100%);
+            border: 1px solid #fff; border-top: 1px solid #aaa;
+            border-radius: 4px;
+            padding: 8px;
+            display: flex; justify-content: center; gap: 8px;
+            box-shadow: inset 0 1px 0 #fff;
         }
 
-        /* Save Button */
-        .save-pill {
-            margin-top: 30px;
-            padding: 15px 40px;
-            background: linear-gradient(180deg, #fff 0%, #e0e0e0 100%);
-            border: 2px solid #fff;
-            border-radius: 50px;
-            color: var(--deep-pink);
-            font-weight: bold; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            font-family: 'Varela Round';
+        /* Beveled Block Buttons */
+        .block-btn {
+            width: 40px; height: 30px;
+            /* The Classic Windows "3D Button" Gradient */
+            background: linear-gradient(to bottom, #ffffff 0%, #dddddd 45%, #d0d0d0 50%, #c0c0c0 100%);
+            border: 1px solid #777;
+            border-radius: 3px;
+            cursor: pointer;
+            
+            /* Text Styling */
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #333;
+            
+            /* 3D Pop Effect */
+            box-shadow: inset 1px 1px 0 #fff, 0 1px 2px rgba(0,0,0,0.3);
         }
 
-        .hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 12px; pointer-events: none; text-shadow: 0 1px 2px #000; }
+        .block-btn:active {
+            /* Pushed Down Effect */
+            background: #ccc;
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
+            transform: translateY(1px);
+        }
+        
+        .play-btn { width: 60px; font-weight: bold; }
+        .stop-btn { color: #cc0000; font-weight: bold; }
+
+        /* --- SAVE BUTTON --- */
+        .save-btn {
+            margin-top: 20px;
+            background: linear-gradient(to bottom, #99ccff 0%, #0066cc 100%);
+            border: 1px solid #003366;
+            color: white; font-family: 'Tahoma', sans-serif; font-weight: bold;
+            padding: 10px 30px; border-radius: 4px; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .save-btn:active { transform: translateY(1px); box-shadow: none; }
+
     </style>
 </head>
 <body>
 
-    <div class="bubble" style="width: 200px; height: 200px; top: 10%; left: -50px;"></div>
-    <div class="bubble" style="width: 150px; height: 150px; bottom: 10%; right: -30px;"></div>
-
-    <div class="aero-window" id="player">
+    <div class="window-shell" id="player">
         <div class="title-bar">
             <span>Windows Media Player</span>
-            <span style="font-size:18px;">🌺</span>
-        </div>
-
-        <div class="screen-inset">
-            <div class="art-frame" onclick="document.getElementById('file-up').click()">
-                <img id="art-show" class="art-img" src="https://via.placeholder.com/300x250/333333/ff69b4?text=">
-                <div class="gloss-reflection"></div>
-                <div class="hint" id="hint-txt">TAP FOR PHOTO</div>
-            </div>
-
-            <div class="info-block">
-                <div class="song-title" contenteditable="true">Tropical Gurl (2004)</div>
-                <div class="time-display">
-                    <span contenteditable="true">PLAYING</span>
-                    <span contenteditable="true">03:26</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-fill"></div>
-                </div>
+            <div class="win-controls">
+                <div class="win-btn-small">_</div>
+                <div class="win-btn-small">□</div>
+                <div class="win-btn-small" style="background:#cc6666; color:white;">x</div>
             </div>
         </div>
 
-        <div class="controls-block">
-            <div class="gel-btn">⏮</div>
-            <div class="gel-btn gel-btn-big">▶</div>
-            <div class="gel-btn">⏭</div>
+        <div class="main-body">
+            <div class="art-frame" onclick="document.getElementById('file-upload').click()">
+                <img id="art-img" src="https://via.placeholder.com/300x300/111/333?text=">
+                <div class="click-hint" id="hint">Click to Add Art...</div>
+            </div>
+
+            <div class="lcd-strip">
+                <div style="display:flex; flex-direction:column;">
+                    <div class="lcd-text" contenteditable="true">My Chemical Romance - Helena</div>
+                    <div style="font-size:10px; color:#aaa; margin-top:2px;" contenteditable="true">Three Cheers for Sweet Revenge</div>
+                </div>
+                <div class="lcd-time" contenteditable="true">03:24</div>
+            </div>
+
+            <div class="controls-plate">
+                <div class="block-btn">⏮</div>
+                <div class="block-btn play-btn">▶</div>
+                <div class="block-btn stop-btn">■</div>
+                <div class="block-btn">⏭</div>
+            </div>
         </div>
     </div>
 
-    <input type="file" id="file-up" accept="image/*" style="display:none" onchange="loadFile(this)">
-    <button class="save-pill" onclick="saveImage()">💾 Save Aesthetic</button>
+    <input type="file" id="file-upload" accept="image/*" style="display:none" onchange="loadArt(this)">
+    <button class="save-btn" onclick="saveImage()">Save Aesthetic Image</button>
 
     <script>
-        function loadFile(input) {
-            if(input.files && input.files[0]) {
-                let reader = new FileReader();
+        function loadArt(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('art-show').src = e.target.result;
-                    document.getElementById('hint-txt').style.display = 'none';
+                    document.getElementById('art-img').src = e.target.result;
+                    document.getElementById('hint').style.display = 'none';
                 }
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
         function saveImage() {
-            html2canvas(document.getElementById('player'), {
-                scale: 3,
+            const element = document.getElementById('player');
+            html2canvas(element, { 
+                scale: 3, 
                 backgroundColor: null,
-                useCORS: true
+                useCORS: true 
             }).then(canvas => {
-                let link = document.createElement("a");
-                link.download = "frutiger-aero-player.png";
+                const link = document.createElement("a");
+                link.download = "vista-player.png";
                 link.href = canvas.toDataURL("image/png");
                 link.click();
             });
