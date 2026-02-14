@@ -3,238 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RetroPod PWA</title>
+    <title>Y2K Playlist Maker</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            --metal-gradient: linear-gradient(180deg, #dcdcdc 0%, #888 49%, #555 50%, #888 100%);
-            --screen-bg: #000;
-            --lcd-color: #00ff00;
-            --btn-highlight: #e6e6e6;
+            /* Default Theme: Winamp Blue */
+            --main-bg: #c0c0c0;
+            --title-bar: linear-gradient(90deg, #000080, #1084d0);
+            --highlight: #000080;
+            --text-main: #000;
+            --viz-color: #00ff00;
         }
 
         body {
-            background: #202020;
-            font-family: 'Arial Narrow', sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box;
+            background: #222;
+            font-family: 'Tahoma', sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; margin: 0;
+            min-height: 100vh;
         }
 
-        /* --- THE PLAYER CHASSIS --- */
+        /* --- THE PLAYER SKIN --- */
         #player-skin {
-            width: 100%;
-            max-width: 360px;
-            background: var(--metal-gradient);
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 10px rgba(255,255,255,0.5);
-            border: 2px solid #aaa;
+            width: 95%; max-width: 380px;
+            background: var(--main-bg);
+            border: 2px solid #fff;
+            border-right-color: #555; border-bottom-color: #555;
+            padding: 4px;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
             position: relative;
         }
 
-        /* Top Info Screen */
-        .lcd-screen {
-            background: #111;
-            border: 4px inset #555;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 15px;
-            box-shadow: inset 0 0 10px #000;
-        }
-
-        .track-scroller {
-            white-space: nowrap; overflow: hidden;
-            color: var(--lcd-color);
-            font-family: 'Courier New', monospace;
-            font-size: 14px; text-transform: uppercase;
-            text-shadow: 0 0 5px var(--lcd-color);
-            margin-bottom: 5px;
-        }
-
-        .time-display {
-            font-family: 'Courier New', monospace;
-            font-size: 28px; color: var(--lcd-color); font-weight: bold;
-            text-align: right;
-            text-shadow: 0 0 5px var(--lcd-color);
-        }
-
-        /* Album Art Window */
-        .art-window {
-            width: 100%;
-            aspect-ratio: 1/1;
-            background: #000;
-            border: 3px inset #666;
-            margin-bottom: 15px;
-            position: relative;
-            overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        #album-art {
-            width: 100%; height: 100%;
-            object-fit: cover;
-            display: none; /* Hidden until loaded */
-        }
-
-        .placeholder-art {
-            color: #444; font-size: 50px;
-        }
-
-        /* Controls */
-        .controls-row {
+        /* Title Bar */
+        .title-bar {
+            background: var(--title-bar);
+            height: 20px;
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.2);
-            padding: 10px; border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0 4px;
+            color: white; font-weight: bold; font-size: 11px;
+            margin-bottom: 5px; cursor: default;
         }
 
+        /* The "Black Screen" Area */
+        .main-display {
+            background: #000;
+            padding: 8px;
+            margin-bottom: 5px;
+            border: 2px inset #888;
+            display: flex; flex-direction: column; gap: 5px;
+        }
+
+        /* Editable Song Title */
+        .song-info {
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            border-bottom: 1px dashed #333;
+        }
+
+        /* The Visualizer Bars */
+        .visualizer {
+            display: flex; align-items: flex-end; gap: 2px;
+            height: 40px; border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+        }
+        .bar {
+            flex: 1; background: var(--viz-color);
+            animation: bounce 0.5s infinite alternate;
+        }
+        /* Randomize animation speeds for "fake" look */
+        .bar:nth-child(1) { animation-duration: 0.4s; height: 40%; }
+        .bar:nth-child(2) { animation-duration: 0.6s; height: 70%; }
+        .bar:nth-child(3) { animation-duration: 0.3s; height: 50%; }
+        .bar:nth-child(4) { animation-duration: 0.5s; height: 80%; }
+        .bar:nth-child(5) { animation-duration: 0.4s; height: 60%; }
+        .bar:nth-child(6) { animation-duration: 0.7s; height: 30%; }
+        
+        @keyframes bounce { 
+            0% { opacity: 0.5; height: 10%; } 
+            100% { opacity: 1; height: 100%; } 
+        }
+
+        /* Controls Row */
+        .controls {
+            display: flex; gap: 2px; margin-bottom: 5px;
+        }
         .btn {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            border: none;
-            background: radial-gradient(circle at 30% 30%, #fff, #999);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            cursor: pointer;
-            font-size: 16px; display: flex; align-items: center; justify-content: center;
+            background: #d4d0c8; border: 2px outset #fff;
+            font-size: 10px; font-weight: bold; width: 100%;
+            cursor: pointer; padding: 5px 0;
         }
-        .btn:active { transform: scale(0.95); background: #777; }
-        .btn-large { width: 65px; height: 65px; font-size: 24px; }
+        .btn:active { border: 2px inset #fff; }
 
-        /* Sliders / Inputs */
-        #seek-bar { width: 100%; margin: 10px 0; cursor: pointer; }
-
-        /* Hidden Inputs */
-        .file-inputs {
-            margin-top: 20px;
-            background: #333; padding: 15px; border-radius: 10px; width: 100%;
-            max-width: 360px; color: white; text-align: center;
+        /* Playlist Window */
+        .playlist-box {
+            background: #fff;
+            border: 2px inset #fff;
+            height: 180px;
+            overflow-y: hidden; /* Hide scrollbar for cleaner screenshot */
+            font-size: 11px;
         }
         
-        .upload-btn {
-            background: #444; color: white; border: 1px solid #777;
-            padding: 10px; margin: 5px; width: 100%; cursor: pointer;
-            text-transform: uppercase; font-size: 12px; letter-spacing: 1px;
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--main-bg); text-align: left; padding: 2px; border-bottom: 1px solid #888; }
+        td { padding: 3px; border-bottom: 1px solid #eee; cursor: text; }
+        
+        /* The "Selected" row look */
+        .selected { background: var(--highlight); color: white; }
+
+        /* --- EDITOR TOOLS (Won't show in photo) --- */
+        #tools {
+            margin-top: 30px; text-align: center; color: #888; width: 100%; max-width: 400px;
         }
+        .theme-btn {
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
+            display: inline-block; cursor: pointer; margin: 0 5px;
+        }
+        [contenteditable]:focus { outline: 2px solid hotpink; background: rgba(255,255,0,0.2); color: black;} 
+        .selected [contenteditable]:focus { color: white; }
     </style>
 </head>
 <body>
 
 <div id="player-skin">
-    <div class="lcd-screen">
-        <div class="track-scroller" id="track-name">NO DISC INSERTED...</div>
-        <div class="time-display" id="timer">00:00</div>
+    <div class="title-bar">
+        <span>WinAmp 2003</span>
+        <span>_ □ X</span>
     </div>
 
-    <div class="art-window">
-        <div class="placeholder-art" id="placeholder">♪</div>
-        <img id="album-art" src="" alt="Album Art">
+    <div class="main-display">
+        <div class="song-info" contenteditable="true">1. Britney Spears - Toxic (Y2K Remix)</div>
+        
+        <div class="visualizer">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; color:#00ff00; font-family:monospace;">
+            <span contenteditable="true">128kbps</span>
+            <span contenteditable="true">03:42</span>
+        </div>
     </div>
 
-    <input type="range" id="seek-bar" value="0" min="0" step="1">
+    <div class="controls">
+        <button class="btn">PREV</button>
+        <button class="btn">PLAY</button>
+        <button class="btn">PAUSE</button>
+        <button class="btn">STOP</button>
+        <button class="btn">NEXT</button>
+    </div>
 
-    <div class="controls-row">
-        <button class="btn" onclick="stopAudio()">■</button>
-        <button class="btn btn-large" onclick="togglePlay()" id="play-btn">▶</button>
-        <button class="btn" onclick="takePhoto()">📷</button>
+    <div class="playlist-box">
+        <table id="list-table">
+            <thead>
+                <tr><th width="20">#</th><th>Artist - Title</th><th width="30">Time</th></tr>
+            </thead>
+            <tbody>
+                <tr class="selected">
+                    <td contenteditable="true">1</td>
+                    <td contenteditable="true">Britney Spears - Toxic</td>
+                    <td contenteditable="true">3:18</td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">2</td>
+                    <td contenteditable="true">Linkin Park - Numb</td>
+                    <td contenteditable="true">3:07</td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">3</td>
+                    <td contenteditable="true">Evanescence - Bring Me To Life</td>
+                    <td contenteditable="true">3:55</td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">4</td>
+                    <td contenteditable="true">Avril Lavigne - Sk8er Boi</td>
+                    <td contenteditable="true">3:23</td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">5</td>
+                    <td contenteditable="true">OutKast - Hey Ya!</td>
+                    <td contenteditable="true">3:55</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
-<div class="file-inputs">
-    <p style="margin:0 0 10px 0; font-size:12px; color:#aaa;">/// MEDIA LOADER ///</p>
-    
-    <label class="upload-btn">
-        📂 Load Song (MP3)
-        <input type="file" id="audio-input" accept="audio/*" style="display: none;">
-    </label>
-    
-    <label class="upload-btn">
-        🖼️ Load Cover Art
-        <input type="file" id="image-input" accept="image/*" style="display: none;">
-    </label>
+<div id="tools">
+    <p>🎨 PICK A SKIN:</p>
+    <div class="theme-btn" style="background:#000080;" onclick="setTheme('blue')"></div>
+    <div class="theme-btn" style="background:#ff69b4;" onclick="setTheme('pink')"></div>
+    <div class="theme-btn" style="background:#444;" onclick="setTheme('silver')"></div>
+    <br><br>
+    <button onclick="addRow()" style="padding:10px;">➕ Add Row</button>
+    <button onclick="takeSnap()" style="padding:10px; background: #00ff00; font-weight:bold;">📷 SAVE PHOTO</button>
+    <p style="font-size: 12px; margin-top: 10px;">✨ TIP: Click directly on the song names or times above to rewrite them!</p>
 </div>
-
-<audio id="audio-player"></audio>
 
 <script>
-    const audioPlayer = document.getElementById('audio-player');
-    const playBtn = document.getElementById('play-btn');
-    const seekBar = document.getElementById('seek-bar');
-    const trackName = document.getElementById('track-name');
-    const timer = document.getElementById('timer');
-    const albumArt = document.getElementById('album-art');
-    const placeholder = document.getElementById('placeholder');
-
-    // 1. Handle Audio Upload
-    document.getElementById('audio-input').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const fileUrl = URL.createObjectURL(file);
-            audioPlayer.src = fileUrl;
-            trackName.innerText = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-            trackName.style.animation = "marquee 5s linear infinite";
-            timer.innerText = "00:00";
-        }
-    });
-
-    // 2. Handle Image Upload
-    document.getElementById('image-input').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                albumArt.src = event.target.result;
-                albumArt.style.display = "block";
-                placeholder.style.display = "none";
-            }
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // 3. Playback Controls
-    function togglePlay() {
-        if (audioPlayer.paused) {
-            audioPlayer.play();
-            playBtn.innerText = "||";
-        } else {
-            audioPlayer.pause();
-            playBtn.innerText = "▶";
+    function setTheme(color) {
+        const root = document.documentElement;
+        if (color === 'blue') {
+            root.style.setProperty('--main-bg', '#c0c0c0');
+            root.style.setProperty('--title-bar', 'linear-gradient(90deg, #000080, #1084d0)');
+            root.style.setProperty('--highlight', '#000080');
+            root.style.setProperty('--viz-color', '#00ff00');
+        } else if (color === 'pink') {
+            root.style.setProperty('--main-bg', '#ffe0f0');
+            root.style.setProperty('--title-bar', 'linear-gradient(90deg, #ff1493, #ff69b4)');
+            root.style.setProperty('--highlight', '#ff1493');
+            root.style.setProperty('--viz-color', '#ff00ff');
+        } else if (color === 'silver') {
+            root.style.setProperty('--main-bg', '#dcdcdc');
+            root.style.setProperty('--title-bar', 'linear-gradient(90deg, #444, #888)');
+            root.style.setProperty('--highlight', '#555');
+            root.style.setProperty('--viz-color', '#00ffff');
         }
     }
 
-    function stopAudio() {
-        audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-        playBtn.innerText = "▶";
+    function addRow() {
+        const table = document.querySelector("#list-table tbody");
+        const count = table.rows.length + 1;
+        const row = `<tr>
+            <td contenteditable="true">${count}</td>
+            <td contenteditable="true">New Song...</td>
+            <td contenteditable="true">0:00</td>
+        </tr>`;
+        table.innerHTML += row;
     }
 
-    // 4. Update Timer & Seek Bar
-    audioPlayer.addEventListener('timeupdate', () => {
-        const current = audioPlayer.currentTime;
-        const duration = audioPlayer.duration || 0;
-
-        // Format Time
-        let mins = Math.floor(current / 60);
-        let secs = Math.floor(current % 60);
-        if (secs < 10) secs = "0" + secs;
-        timer.innerText = `${mins}:${secs}`;
-
-        // Update Slider
-        seekBar.value = (current / duration) * 100;
-    });
-
-    // Allow scrubbing
-    seekBar.addEventListener('input', (e) => {
-        const duration = audioPlayer.duration;
-        audioPlayer.currentTime = (e.target.value / 100) * duration;
-    });
-
-    // 5. Save as Photo
-    function takePhoto() {
+    function takeSnap() {
         const element = document.getElementById('player-skin');
         html2canvas(element, { scale: 3, backgroundColor: null }).then(canvas => {
             let link = document.createElement("a");
-            link.download = "now-playing.png";
+            link.download = "y2k-playlist.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
