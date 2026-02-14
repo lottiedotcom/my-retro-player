@@ -3,190 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows Media Player Y2K</title>
+    <title>Frutiger Aero Player</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            --y2k-pink: #ff00cc;
-            --y2k-purple: #9900ff;
-            --y2k-cyan: #00ffff;
-            /* Silver/White Chrome Look */
-            --y2k-chrome: linear-gradient(135deg, #ffffff 0%, #e0e0e0 50%, #b0b0b0 100%);
-            --y2k-glow: 0 0 15px var(--y2k-pink);
+            /* Coconut Girl / Frutiger Palette */
+            --glass-pink: rgba(255, 105, 180, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --deep-pink: #ff1493;
+            --ocean-blue: #00bfff;
+            --lime: #32cd32;
         }
 
         body {
-            background-color: #000;
+            /* Frutiger Aero Background: Abstract Waves */
+            background: linear-gradient(180deg, #87CEFA 0%, #E0FFFF 50%, #FFB6C1 100%);
+            min-height: 100vh;
             display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            min-height: 100vh; margin: 0;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* --- THE PLAYER --- */
-        .player-container {
-            width: 320px;
-            padding: 15px;
-            background: var(--y2k-chrome);
-            border: 4px solid #fff;
-            border-radius: 15px;
-            box-shadow: 
-                inset 2px 2px 5px rgba(255,255,255,0.8),
-                inset -2px -2px 5px rgba(0,0,0,0.5),
-                var(--y2k-glow);
-            position: relative;
+            align-items: center; justify-content: center;
+            font-family: 'Varela Round', sans-serif;
+            margin: 0;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 15px; 
         }
 
-        /* Stars Decoration */
-        .player-container::before, .player-container::after {
-            content: '★'; position: absolute;
-            color: var(--y2k-pink); font-size: 24px;
-            text-shadow: 0 0 5px var(--y2k-pink); z-index: 10; pointer-events: none;
-        }
-        .player-container::before { top: 8px; left: 8px; }
-        .player-container::after { bottom: 8px; right: 8px; color: var(--y2k-cyan); text-shadow: 0 0 5px var(--y2k-cyan); }
-
-        /* Title Bar */
-        .title-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            color: #fff;
-            font-family: 'Orbitron', sans-serif; font-size: 14px;
-            text-shadow: 1px 1px 2px #000;
-            background: linear-gradient(90deg, var(--y2k-pink), var(--y2k-purple));
-            padding: 8px 12px; border-radius: 8px; border: 2px solid #fff;
+        /* Bubbles Background decoration */
+        .bubble {
+            position: absolute; border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+            z-index: -1;
         }
 
-        /* Album Art (Clickable & Taller) */
-        .album-art-container {
-            position: relative; 
-            width: 100%; 
-            height: 320px; 
-            background: #000; 
-            border: 3px solid #fff;
-            border-radius: 10px; 
-            overflow: hidden; 
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
-            cursor: pointer;
-        }
-
-        .album-art { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Info Screen */
-        .info-screen {
-            background-color: #000; border: 3px solid #fff;
-            border-radius: 8px; padding: 12px;
-            color: #00ff00; text-shadow: 0 0 5px #00ff00;
-        }
-
-        .track-info {
-            font-size: 18px; font-weight: bold; margin-bottom: 8px;
-            white-space: nowrap; overflow: hidden; outline: none;
-        }
-
-        .status-row { display: flex; justify-content: space-between; font-size: 14px; }
-
-        /* Buttons Row */
-        .btn-row { display: flex; justify-content: space-between; gap: 10px; }
-        
-        /* FIXED BUTTONS: Using "Safety Pink" background-color and Black Text */
-        .y2k-btn {
-            flex: 1; padding: 12px 0; border: none; border-radius: 30px;
-            font-family: 'Orbitron', sans-serif; font-size: 20px; 
-            
-            /* CHANGE 1: Black Text so it never disappears */
-            color: #000; 
-            
-            /* CHANGE 2: Solid Fallback Color + Gradient */
-            background-color: #ff66cc; 
-            background-image: linear-gradient(180deg, #ffccff 0%, #ff66cc 50%, #cc00cc 100%);
-            
-            /* Glossy effect using shadow instead of gradient (captures better) */
+        /* --- THE PLAYER GADGET --- */
+        .aero-window {
+            width: 340px;
+            /* The Vista Glass Effect */
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 51%, rgba(255,255,255,0.2) 100%);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.7);
+            border-top: 2px solid rgba(255,255,255,0.9);
+            border-radius: 20px;
             box-shadow: 
-                inset 0 4px 5px rgba(255,255,255,0.9), 
-                0 4px 6px rgba(0,0,0,0.3);
-            
-            cursor: pointer; position: relative; overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
+                0 15px 35px rgba(0,0,0,0.2),
+                inset 0 0 30px rgba(255,255,255,0.6);
+            padding: 15px;
+            display: flex; flex-direction: column; gap: 15px;
+            position: relative;
+        }
+
+        /* Window Title Bar */
+        .title-bar {
+            background: linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.2));
+            padding: 8px 15px;
+            border-radius: 10px;
+            color: var(--deep-pink);
+            font-weight: bold; font-size: 14px;
+            display: flex; justify-content: space-between; align-items: center;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* Blocky Screen Area */
+        .screen-inset {
+            background: #000;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 
+                inset 0 3px 8px rgba(0,0,0,0.8),
+                0 1px 0 rgba(255,255,255,0.5);
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+
+        /* Album Art Frame */
+        .art-frame {
+            width: 100%; height: 250px;
+            background: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid #444;
         }
         
-        .y2k-btn:active { transform: translateY(2px); box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
+        .art-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Gloss Overlay on Art */
+        .gloss-reflection {
+            position: absolute; top: 0; left: 0; width: 100%; height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
 
-        /* Hint Text */
-        .upload-hint {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-weight: bold; font-family: 'Orbitron'; pointer-events: none;
-            text-shadow: 2px 2px 0 #000; z-index: 6;
+        /* Text Info */
+        .info-block {
+            margin-top: 10px;
+            color: var(--ocean-blue);
+        }
+        .song-title {
+            font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 4px;
+            font-family: 'Varela Round', sans-serif;
+            text-shadow: 0 0 10px var(--deep-pink);
+        }
+        .time-display {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--lime); font-size: 16px;
+            text-shadow: 0 0 5px var(--lime);
+            display: flex; justify-content: space-between;
+        }
+
+        /* Progress Bar (The "Blocky" Feel) */
+        .progress-track {
+            height: 12px; background: #333;
+            border-radius: 6px; margin-top: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+            position: relative; overflow: hidden;
+        }
+        .progress-fill {
+            width: 65%; height: 100%;
+            background: linear-gradient(90deg, var(--deep-pink), var(--ocean-blue));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+            border-right: 1px solid #fff;
+        }
+        /* Striped Candy Pattern overlay */
+        .progress-track::after {
+            content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.2) 5px, rgba(0,0,0,0.2) 10px);
+        }
+
+        /* Gel Buttons Container */
+        .controls-block {
+            background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+            padding: 10px; border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.5);
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        /* The Gel Orb Buttons */
+        .gel-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            /* The "Vista" Gloss Gradient */
+            background: radial-gradient(circle at 50% 30%, #ffebf5 5%, #ff69b4 60%, #c71585 100%);
+            box-shadow: 
+                0 5px 10px rgba(0,0,0,0.2),
+                inset 0 2px 5px rgba(255,255,255,0.8),
+                inset 0 -2px 5px rgba(0,0,0,0.2);
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: #fff; text-shadow: 0 -1px 1px rgba(0,0,0,0.3);
+            cursor: pointer; position: relative;
+        }
+        
+        .gel-btn::after {
+            content: ''; position: absolute; top: 2px; left: 10px; right: 10px; height: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0));
+            border-radius: 50%;
+        }
+
+        .gel-btn-big {
+            width: 70px; height: 70px; font-size: 28px;
+            background: radial-gradient(circle at 50% 30%, #e0ffff 5%, #00bfff 60%, #00688b 100%);
         }
 
         /* Save Button */
-        .save-btn {
-            margin-top: 30px; padding: 15px 40px; background: #fff;
-            border: 3px solid var(--y2k-pink); color: var(--y2k-pink);
-            font-family: 'Orbitron'; font-weight: bold; font-size: 16px; cursor: pointer;
-            box-shadow: 0 0 20px var(--y2k-pink); border-radius: 50px;
-            transition: 0.2s;
+        .save-pill {
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: linear-gradient(180deg, #fff 0%, #e0e0e0 100%);
+            border: 2px solid #fff;
+            border-radius: 50px;
+            color: var(--deep-pink);
+            font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-family: 'Varela Round';
         }
-        .save-btn:active { transform: scale(0.95); }
+
+        .hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 12px; pointer-events: none; text-shadow: 0 1px 2px #000; }
     </style>
 </head>
 <body>
 
-    <div class="player-container" id="player">
+    <div class="bubble" style="width: 200px; height: 200px; top: 10%; left: -50px;"></div>
+    <div class="bubble" style="width: 150px; height: 150px; bottom: 10%; right: -30px;"></div>
+
+    <div class="aero-window" id="player">
         <div class="title-bar">
-            <span>★ Windows Media Player ★</span>
-            <span>_ □ X</span>
+            <span>Windows Media Player</span>
+            <span style="font-size:18px;">🌺</span>
         </div>
 
-        <div class="album-art-container" onclick="document.getElementById('file-upload').click()">
-            <img src="https://via.placeholder.com/300x320/000000/333333?text=" class="album-art" id="art-img">
-            <div class="upload-hint" id="hint">TAP TO ADD IMG</div>
-        </div>
+        <div class="screen-inset">
+            <div class="art-frame" onclick="document.getElementById('file-up').click()">
+                <img id="art-show" class="art-img" src="https://via.placeholder.com/300x250/333333/ff69b4?text=">
+                <div class="gloss-reflection"></div>
+                <div class="hint" id="hint-txt">TAP FOR PHOTO</div>
+            </div>
 
-        <div class="info-screen">
-            <div class="track-info" contenteditable="true">Tropical Gurl - Babygurl (2001)</div>
-            <div class="status-row">
-                <span contenteditable="true">Playing</span>
-                <span contenteditable="true">03:26</span>
+            <div class="info-block">
+                <div class="song-title" contenteditable="true">Tropical Gurl (2004)</div>
+                <div class="time-display">
+                    <span contenteditable="true">PLAYING</span>
+                    <span contenteditable="true">03:26</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill"></div>
+                </div>
             </div>
         </div>
 
-        <div class="btn-row">
-            <div class="y2k-btn">⏮</div>
-            <div class="y2k-btn">⏯</div>
-            <div class="y2k-btn" style="background-color: #ff5555; background-image: linear-gradient(180deg, #ffaaaa 0%, #ff5555 100%);">■</div>
-            <div class="y2k-btn">⏭</div>
+        <div class="controls-block">
+            <div class="gel-btn">⏮</div>
+            <div class="gel-btn gel-btn-big">▶</div>
+            <div class="gel-btn">⏭</div>
         </div>
     </div>
 
-    <input type="file" id="file-upload" accept="image/*" style="display:none" onchange="loadArt(this)">
-    <button class="save-btn" onclick="saveImage()">💾 SAVE IMAGE</button>
+    <input type="file" id="file-up" accept="image/*" style="display:none" onchange="loadFile(this)">
+    <button class="save-pill" onclick="saveImage()">💾 Save Aesthetic</button>
 
     <script>
-        function loadArt(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
+        function loadFile(input) {
+            if(input.files && input.files[0]) {
+                let reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('art-img').src = e.target.result;
-                    document.getElementById('hint').style.display = 'none';
+                    document.getElementById('art-show').src = e.target.result;
+                    document.getElementById('hint-txt').style.display = 'none';
                 }
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
         function saveImage() {
-            const element = document.getElementById('player');
-            html2canvas(element, { 
-                scale: 3, 
+            html2canvas(document.getElementById('player'), {
+                scale: 3,
                 backgroundColor: null,
-                useCORS: true 
+                useCORS: true
             }).then(canvas => {
-                const link = document.createElement("a");
-                link.download = "windows-media-y2k.png";
+                let link = document.createElement("a");
+                link.download = "frutiger-aero-player.png";
                 link.href = canvas.toDataURL("image/png");
                 link.click();
             });
