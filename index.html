@@ -3,265 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinPlay 98 - Pink Edition</title>
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <title>Y2K Cyber Player</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Windows 98 Pink Theme */
-            --win-bg: #e6e6e6;
-            --win-gray: #c0c0c0;
-            --win-dark: #808080;
-            --win-light: #ffffff;
-            --win-blue: #000080;
-            --accent-pink: #ff0080;
-            --accent-bar: linear-gradient(90deg, #ff0080, #800040);
+            --silver: #c0c0c0;
+            --dark: #444;
+            --pink-light: #ffccff;
+            --pink-hot: #ff0099;
+            --lcd-bg: #000;
+            --lcd-text: #00ff00;
         }
 
         body {
-            background: #222;
+            background: #2d2d2d;
             font-family: 'Tahoma', sans-serif;
             display: flex; flex-direction: column; align-items: center;
             padding: 10px; margin: 0; min-height: 100vh;
         }
 
-        /* --- THE PLAYER (This is what we save) --- */
-        #player-window {
-            width: 340px;
-            background: var(--win-gray);
-            border: 2px solid;
-            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+        /* --- THE PLAYER (This gets saved) --- */
+        #player-skin {
+            width: 320px;
+            background: var(--silver);
+            border: 2px solid #fff;
+            border-right-color: #555; border-bottom-color: #555;
             box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
-            padding: 2px;
-            margin-bottom: 20px;
+            padding: 4px;
+            position: relative;
         }
 
-        /* Title Bar */
+        /* 1. Title Bar */
         .title-bar {
-            background: var(--accent-bar);
-            color: white; padding: 3px; font-weight: bold; font-size: 11px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 2px;
-        }
-        .win-btn-group { display: flex; gap: 2px; }
-        .win-btn {
-            width: 14px; height: 14px; background: var(--win-gray);
-            border: 1px solid;
-            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
-            font-size: 8px; line-height: 12px; text-align: center; color: black;
-            box-shadow: none; padding: 0; cursor: default;
+            background: linear-gradient(90deg, var(--pink-hot), #800040);
+            padding: 4px; color: white; font-weight: bold; font-size: 11px;
+            display: flex; justify-content: space-between; margin-bottom: 5px;
         }
 
-        /* Main Display (LCD) */
-        .lcd-panel {
+        /* 2. The LCD Screen */
+        .lcd-area {
+            background: var(--lcd-bg);
+            border: 2px inset #555;
+            padding: 10px; margin-bottom: 5px;
+            position: relative;
+        }
+
+        .lcd-text {
+            color: var(--lcd-text);
+            font-family: 'VT323', monospace;
+            font-size: 22px; white-space: nowrap; overflow: hidden;
+            text-shadow: 0 0 5px var(--lcd-text);
+        }
+
+        /* Fake Visualizer */
+        .viz {
+            display: flex; gap: 2px; height: 25px; align-items: flex-end; margin-top: 5px; opacity: 0.8;
+        }
+        .bar {
+            flex: 1; background: var(--lcd-text);
+            animation: bounce 0.4s infinite alternate;
+        }
+        .bar:nth-child(odd) { animation-duration: 0.3s; }
+        .bar:nth-child(even) { animation-duration: 0.5s; }
+        @keyframes bounce { 0% { height: 10%; } 100% { height: 100%; } }
+
+        /* 3. Controls */
+        .controls { display: flex; gap: 3px; margin-bottom: 5px; }
+        .btn {
+            background: var(--silver); flex: 1;
+            border: 2px outset #fff; font-size: 10px; font-weight: bold;
+            cursor: pointer; padding: 5px 0;
+        }
+        .btn:active { border: 2px inset #fff; }
+
+        /* 4. The Playlist */
+        .playlist-box {
             background: #000;
-            border: 2px inset;
-            border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
-            margin: 4px; padding: 10px;
-            color: #00ff00; font-family: 'Courier New', monospace;
-            text-shadow: 0 0 3px #00ff00;
-        }
-        .lcd-main { font-size: 20px; white-space: nowrap; overflow: hidden; }
-        .lcd-sub { font-size: 12px; color: #00aa00; margin-top: 5px; display: flex; justify-content: space-between; }
-
-        /* Playlist Container */
-        .playlist-frame {
-            background: #fff;
-            border: 2px inset;
-            border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
-            height: 180px;
-            overflow-y: hidden; /* Hide scrollbar for clean photo */
-            font-size: 11px;
-            margin: 4px;
+            border: 2px inset #555;
+            height: 180px; overflow-y: hidden;
+            font-family: 'VT323', monospace; color: var(--pink-light);
+            font-size: 16px;
         }
 
         .pl-row {
-            display: flex; padding: 3px 5px; border-bottom: 1px dotted #ccc;
-            cursor: pointer;
+            display: flex; padding: 2px 5px; cursor: text;
         }
-        .pl-row:hover { background: #ffccff; }
-        .pl-row.active { background: var(--accent-pink); color: white; }
-        
-        .pl-num { width: 20px; }
-        .pl-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pl-time { width: 30px; text-align: right; }
+        .pl-row:hover { background: #333; }
+        .pl-idx { width: 25px; color: #888; }
+        .pl-song { flex: 1; white-space: nowrap; overflow: hidden; }
+        .pl-time { width: 35px; text-align: right; color: var(--pink-hot); }
 
-        /* Chunk Controls */
-        .controls {
-            display: flex; justify-content: center; gap: 4px; padding: 6px;
+        /* --- THE INPUT AREA (Hidden in photo) --- */
+        #input-area {
+            width: 320px; background: #fff; padding: 15px; margin-top: 20px;
+            border-radius: 8px; box-sizing: border-box;
         }
-        .chunk-btn {
-            background: var(--win-gray);
-            border: 2px solid;
-            border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
-            padding: 5px 15px; font-size: 10px; font-weight: bold;
-            cursor: pointer;
+        textarea {
+            width: 100%; height: 100px; padding: 10px; box-sizing: border-box;
+            border: 2px solid #ccc; font-size: 12px;
+            margin-bottom: 10px;
         }
-        .chunk-btn:active { border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark); transform: translate(1px, 1px); }
-
-        /* --- THE EDITOR TOOLS --- */
-        #editor-panel {
-            width: 340px; background: #333; color: white; padding: 10px;
-            border: 1px solid #555;
+        .action-btn {
+            width: 100%; padding: 12px; background: var(--pink-hot); color: white;
+            border: none; font-weight: bold; cursor: pointer; border-radius: 4px;
+            margin-bottom: 5px;
         }
-        
-        .tool-btn {
-            display: block; width: 100%; padding: 10px; margin-bottom: 10px;
-            background: #ff0080; border: none; color: white; font-weight: bold; cursor: pointer;
-        }
-        
-        /* The Cleanup List */
-        #draft-list {
-            background: #222; max-height: 150px; overflow-y: auto; 
-            margin-bottom: 10px; border: 1px solid #555; display: none;
-        }
-        .draft-item {
-            padding: 5px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; font-size: 12px;
-        }
-        .del-btn { color: red; font-weight: bold; cursor: pointer; padding: 0 5px; }
 
     </style>
 </head>
 <body>
 
-<div id="player-window">
+<div id="player-skin">
     <div class="title-bar">
-        <span>💖 WinPlay 98</span>
-        <div class="win-btn-group">
-            <button class="win-btn">_</button>
-            <button class="win-btn">□</button>
-            <button class="win-btn">X</button>
-        </div>
+        <span>WinAmp_Player_v2.exe</span>
+        <span>X</span>
     </div>
 
-    <div class="lcd-panel">
-        <div class="lcd-main" id="lcd-text">READY...</div>
-        <div class="lcd-sub">
-            <span>STEREO</span>
-            <span>128 KBPS</span>
-            <span id="lcd-time">00:00</span>
+    <div class="lcd-area">
+        <div class="lcd-text" id="now-playing">*** WAITING FOR MUSIC ***</div>
+        <div class="viz">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
         </div>
-    </div>
-
-    <div class="playlist-frame" id="final-list">
-        <div class="pl-row active">
-            <div class="pl-num">1.</div>
-            <div class="pl-title" contenteditable="true">Tap "Import" below...</div>
-            <div class="pl-time" contenteditable="true">3:45</div>
-        </div>
-        <div class="pl-row">
-            <div class="pl-num">2.</div>
-            <div class="pl-title" contenteditable="true">...to load your screenshot!</div>
-            <div class="pl-time" contenteditable="true">2:10</div>
+        <div style="color:#00ff00; font-family:'VT323'; font-size:14px; margin-top:2px; display:flex; justify-content:space-between;">
+            <span>128kbps</span>
+            <span>00:00</span>
         </div>
     </div>
 
     <div class="controls">
-        <button class="chunk-btn">PREV</button>
-        <button class="chunk-btn">PLAY</button>
-        <button class="chunk-btn">PAUSE</button>
-        <button class="chunk-btn">STOP</button>
-        <button class="chunk-btn">NEXT</button>
+        <button class="btn">PREV</button>
+        <button class="btn">PLAY</button>
+        <button class="btn">PAUSE</button>
+        <button class="btn">STOP</button>
+        <button class="btn">NEXT</button>
+    </div>
+
+    <div class="playlist-box" id="pl-container">
+        <div class="pl-row"><span class="pl-idx">1.</span><span class="pl-song">Paste text below...</span><span class="pl-time">0:00</span></div>
+        <div class="pl-row"><span class="pl-idx">2.</span><span class="pl-song">...and click Generate!</span><span class="pl-time">0:00</span></div>
     </div>
 </div>
 
-<div id="editor-panel">
-    <p style="margin:0 0 10px 0; font-size:12px;">📸 IMPORT PLAYLIST</p>
+<div id="input-area">
+    <h3 style="margin-top:0; color:#333;">📝 Smart Paste</h3>
+    <p style="font-size:11px; color:#666;">Copy your playlist text (from Spotify/Notes) and paste it here. I will try to clean it up!</p>
     
-    <button class="tool-btn" onclick="document.getElementById('screen-input').click()">1. Upload Screenshot</button>
-    <input type="file" id="screen-input" accept="image/*" style="display:none;" onchange="readImage(this)">
+    <textarea id="raw-text" placeholder="Example:&#10;Toxic - Britney Spears&#10;Numb - Linkin Park"></textarea>
     
-    <div id="status-msg" style="font-size:11px; color:yellow; margin-bottom:5px;"></div>
-    <div id="draft-list">
-        </div>
-
-    <button class="tool-btn" style="background:#444;" onclick="pushToPlayer()">2. Update Player</button>
-    <button class="tool-btn" style="background:#00aa00;" onclick="saveImage()">3. Save Image</button>
+    <button class="action-btn" onclick="smartParse()">✨ Make It Cute</button>
+    <button class="action-btn" style="background:#444;" onclick="saveImage()">💾 Save Image</button>
 </div>
 
 <script>
-    let rawLines = [];
-
-    // 1. READ IMAGE
-    function readImage(input) {
-        if (!input.files || !input.files[0]) return;
+    function smartParse() {
+        const raw = document.getElementById('raw-text').value;
+        const container = document.getElementById('pl-container');
         
-        const msg = document.getElementById('status-msg');
-        msg.innerText = "⏳ Scanning image... please wait...";
-        document.getElementById('draft-list').style.display = 'block';
-
-        Tesseract.recognize(
-            input.files[0],
-            'eng'
-        ).then(({ data: { text } }) => {
-            msg.innerText = "✅ Done! Delete the junk below:";
-            
-            // Filter empty lines
-            rawLines = text.split('\n').filter(l => l.trim().length > 1);
-            
-            renderDrafts();
+        // 1. Split by lines
+        let lines = raw.split('\n');
+        
+        // 2. Filter Junk (Remove empty lines, "Lyrics", short timestamps)
+        lines = lines.filter(line => {
+            let l = line.trim();
+            // Filter out common Spotify junk
+            if (l.length < 2) return false;
+            if (l.includes("Spotify")) return false;
+            if (l.match(/^\d+:\d+$/)) return false; // Removes just timestamps like "3:20"
+            return true;
         });
-    }
 
-    // 2. RENDER DRAFT LIST (For Cleanup)
-    function renderDrafts() {
-        const container = document.getElementById('draft-list');
+        // 3. Render
         container.innerHTML = "";
         
-        rawLines.forEach((line, index) => {
-            const div = document.createElement('div');
-            div.className = 'draft-item';
-            div.innerHTML = `
-                <span contenteditable="true" style="width:85%">${line}</span>
-                <span class="del-btn" onclick="removeLine(${index})">X</span>
-            `;
-            container.appendChild(div);
-        });
-    }
+        if (lines.length > 0) {
+            document.getElementById('now-playing').innerText = "*** " + lines[0] + " ***";
+        }
 
-    // 3. REMOVE LINE
-    function removeLine(index) {
-        rawLines.splice(index, 1);
-        renderDrafts();
-    }
-
-    // 4. PUSH TO PLAYER
-    function pushToPlayer() {
-        // Re-read from the DOM in case user edited text
-        const currentItems = document.querySelectorAll('.draft-item span:first-child');
-        const finalList = document.getElementById('final-list');
-        finalList.innerHTML = "";
-
-        // If list is empty, don't crash
-        if(currentItems.length === 0) return;
-
-        // Set LCD to first track
-        document.getElementById('lcd-text').innerText = "*** " + currentItems[0].innerText + " ***";
-
-        currentItems.forEach((item, i) => {
-            // Fake time gen
-            const min = Math.floor(Math.random() * 3) + 2;
+        lines.forEach((line, i) => {
+            // Fake Time Generator
+            let min = Math.floor(Math.random() * 3) + 2;
             let sec = Math.floor(Math.random() * 60);
             if(sec < 10) sec = "0" + sec;
 
-            const row = `
-            <div class="pl-row ${i === 0 ? 'active' : ''}">
-                <div class="pl-num">${i + 1}.</div>
-                <div class="pl-title" contenteditable="true">${item.innerText}</div>
-                <div class="pl-time" contenteditable="true">${min}:${sec}</div>
+            // Clean the text slightly
+            let cleanText = line.replace(/http\S+/g, "").substring(0, 35);
+
+            let row = `
+            <div class="pl-row">
+                <span class="pl-idx">${i + 1}.</span>
+                <span class="pl-song" contenteditable="true">${cleanText}</span>
+                <span class="pl-time" contenteditable="true">${min}:${sec}</span>
             </div>`;
-            finalList.innerHTML += row;
+            container.innerHTML += row;
         });
-        
-        document.getElementById('draft-list').style.display = 'none';
-        document.getElementById('status-msg').innerText = "✨ Player Updated!";
     }
 
-    // 5. SAVE
     function saveImage() {
-        html2canvas(document.getElementById('player-window'), { scale: 3, backgroundColor: null }).then(canvas => {
-            const link = document.createElement("a");
-            link.download = "win98-playlist.png";
+        html2canvas(document.getElementById('player-skin'), { scale: 3, backgroundColor: null }).then(canvas => {
+            let link = document.createElement("a");
+            link.download = "y2k-playlist.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
