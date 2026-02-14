@@ -1,0 +1,16 @@
+{
+  "name": "Retro Music Maker",
+  "short_name": "RetroPlay",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#2c3e50",
+  "theme_color": "#888888",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3050/3050212.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
