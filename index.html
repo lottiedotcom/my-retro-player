@@ -3,283 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2K Ultra Player</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <title>Y2K Profile Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            /* Default: SAKURA THEME */
-            --bg-body: #2d1b2a;
-            --skin-base: #ffcce0;
-            --skin-shadow: #ff99cc;
-            --screen-bg: #2b0014;
-            --screen-text: #ff0077;
-            --btn-grad: linear-gradient(180deg, #fff 0%, #ff99cc 50%, #ff66b2 51%, #ffccdd 100%);
-            --highlight: #ff0077;
+            --theme-color: #ff0099;
+            --theme-bg: #ffe6f2;
+            --glass-border: rgba(255, 255, 255, 0.6);
         }
 
         body {
-            background: var(--bg-body);
+            background: #222;
+            background-size: cover;
+            background-position: center;
             font-family: 'Tahoma', sans-serif;
             display: flex; flex-direction: column; align-items: center;
             padding: 20px; margin: 0; min-height: 100vh;
-            user-select: none;
+            overflow-x: hidden;
         }
 
-        /* --- THE PLAYER --- */
-        #player-container {
-            width: 100%; max-width: 380px;
-            background: var(--skin-base);
-            border: 3px solid #fff;
-            border-radius: 10px 10px 4px 4px;
+        /* --- THE CAPTURE ZONE --- */
+        #capture-zone {
+            padding: 20px;
+            border-radius: 10px;
+            /* This ensures the background captures too if you want */
+            background: transparent; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- PLAYER CHASSIS --- */
+        #player {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--glass-border);
+            border-top: 2px solid rgba(255,255,255,0.8);
+            border-radius: 15px;
+            padding: 15px;
             box-shadow: 
-                inset 2px 2px 5px rgba(255,255,255,0.8),
-                inset -2px -2px 5px rgba(0,0,0,0.2),
-                0 10px 25px rgba(0,0,0,0.6);
-            padding: 6px;
+                0 15px 35px rgba(0,0,0,0.5),
+                inset 0 0 20px rgba(255,255,255,0.2);
             position: relative;
-            overflow: hidden; /* For stickers */
+            overflow: hidden;
         }
 
-        /* Title Bar */
-        .title-bar {
-            background: linear-gradient(90deg, var(--highlight), #444);
-            color: white; padding: 4px 8px; font-weight: bold; font-size: 11px;
-            border-radius: 6px 6px 0 0; margin-bottom: 6px;
-            display: flex; justify-content: space-between; letter-spacing: 1px;
+        /* CRT Scanline Overlay */
+        .scanlines {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+            display: none; /* Hidden by default */
         }
 
-        /* Main LCD Screen */
-        .main-lcd {
-            background: var(--screen-bg);
+        /* Header */
+        .win-header {
+            display: flex; justify-content: space-between; color: white;
+            font-weight: bold; font-size: 12px; margin-bottom: 10px;
+            text-shadow: 1px 1px 2px black;
+            cursor: default;
+        }
+
+        /* Album Art Box */
+        .album-art-container {
+            width: 100%; aspect-ratio: 1/1;
+            background: #000;
+            border-radius: 8px;
             border: 2px inset rgba(255,255,255,0.3);
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        #art-img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        
+        .upload-hint {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; text-align: center; font-size: 10px; pointer-events: none;
+        }
+
+        /* Song Info */
+        .info-screen {
+            background: #000;
+            border: 2px solid #555;
             border-radius: 4px;
             padding: 8px;
-            margin-bottom: 8px;
-            position: relative;
-        }
-
-        /* Digital Font Styling */
-        .digi-text {
+            margin-bottom: 10px;
+            color: #00ff00;
             font-family: 'VT323', monospace;
-            color: var(--screen-text);
-            text-shadow: 0 0 4px var(--screen-text);
-            font-size: 22px; line-height: 1;
+            text-shadow: 0 0 5px #00ff00;
         }
-
-        /* Scrolling Marquee */
-        .marquee-container {
-            white-space: nowrap; overflow: hidden; margin-bottom: 5px;
-            border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 4px;
-        }
-        .marquee-text {
-            display: inline-block; padding-left: 100%;
-            animation: marquee 8s linear infinite;
-        }
-        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
-
-        /* Fake Spectrum Analyzer */
-        .spectrum {
-            display: flex; gap: 1px; height: 30px; align-items: flex-end; opacity: 0.8;
-        }
-        .bar {
-            flex: 1; background: var(--screen-text);
-            animation: bounce 0.4s infinite ease-in-out alternate;
-        }
-        /* Random heights */
-        .bar:nth-child(odd) { animation-duration: 0.3s; }
-        .bar:nth-child(2n) { animation-duration: 0.5s; }
-        .bar:nth-child(3n) { animation-duration: 0.2s; }
-        @keyframes bounce { 0% { height: 10%; opacity: 0.3; } 100% { height: 100%; opacity: 1; } }
-
-        /* Timer Row */
-        .lcd-stats {
-            display: flex; justify-content: space-between; margin-top: 4px; font-size: 18px;
-        }
-
-        /* Buttons (The "Glossy" Look) */
-        .controls { display: flex; gap: 4px; margin-bottom: 8px; }
-        .glossy-btn {
-            flex: 1; height: 35px; border: 1px solid rgba(0,0,0,0.3); border-radius: 4px;
-            background: var(--btn-grad);
-            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
-            font-size: 10px; font-weight: bold; color: #333; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .glossy-btn:active { transform: translateY(1px); box-shadow: none; filter: brightness(0.9); }
-
-        /* Playlist */
-        .playlist {
-            background: #fff; border: 2px inset #fff; height: 160px;
-            overflow-y: hidden; font-size: 10px; color: #000;
-        }
-        .pl-row {
-            display: flex; padding: 3px; border-bottom: 1px solid #eee; cursor: text;
-        }
-        .pl-row:nth-child(even) { background: #f7f7f7; }
-        .pl-row.active { background: var(--highlight); color: white; }
         
-        .pl-num { width: 20px; text-align: center; }
-        .pl-title { flex: 1; padding-left: 5px; }
-        .pl-time { width: 30px; text-align: right; }
+        .scrolling-text { white-space: nowrap; overflow: hidden; font-size: 20px; }
+        .time-row { display: flex; justify-content: space-between; font-size: 16px; margin-top: 5px; }
 
-        /* Floating Stickers */
-        .sticker { position: absolute; font-size: 20px; pointer-events: none; animation: float 3s infinite ease-in-out; }
-        @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+        /* Controls */
+        .btn-row { display: flex; justify-content: space-between; gap: 5px; }
+        .glass-btn {
+            flex: 1; padding: 8px 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 20px;
+            color: white; font-weight: bold; font-size: 10px;
+            cursor: pointer; box-shadow: 0 4px 5px rgba(0,0,0,0.2);
+        }
+        .glass-btn:active { transform: translateY(2px); box-shadow: none; }
+
+        /* Mood Bar */
+        .mood-bar {
+            margin-top: 15px;
+            background: #fff;
+            border: 2px solid var(--theme-color);
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-family: 'Comic Neue', cursive;
+            font-size: 14px;
+            color: var(--theme-color);
+            text-align: center;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+        }
 
         /* --- EDITOR UI --- */
-        #editor-ui {
-            background: #fff; padding: 15px; border-radius: 10px; width: 95%; max-width: 380px;
-            margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center;
+        #editor {
+            margin-top: 30px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            width: 90%; max-width: 400px;
+            border: 1px solid #444;
         }
-        .theme-dot {
-            display: inline-block; width: 30px; height: 30px; border-radius: 50%; 
-            margin: 5px; cursor: pointer; border: 2px solid #ddd;
+
+        .tool-btn {
+            background: #444; border: 1px solid #666; color: white;
+            padding: 8px 12px; margin: 5px; border-radius: 4px; cursor: pointer;
         }
-        [contenteditable]:focus { background: yellow; color: black; outline: none; }
+        .tool-btn:hover { background: #555; }
+        
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-<div id="player-container">
-    <div class="title-bar">
-        <span>WINAMP 2003</span>
-        <span>_ □ X</span>
-    </div>
-
-    <div class="main-lcd">
-        <div class="marquee-container">
-            <div class="marquee-text digi-text" contenteditable="true" id="scrolling-title">
-                *** BRITNEY SPEARS - TOXIC (Y2K CLUB REMIX) *** </div>
+<div id="capture-zone">
+    <div id="player">
+        <div class="scanlines" id="scanlines"></div>
+        
+        <div class="win-header">
+            <span>Windows Media Player</span>
+            <span>_ □ X</span>
         </div>
 
-        <div class="spectrum">
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="album-art-container" onclick="document.getElementById('art-upload').click()">
+            <img id="art-img" src="https://via.placeholder.com/300x300/333/999?text=CLICK+TO+ADD+PHOTO">
         </div>
 
-        <div class="lcd-stats digi-text">
-            <span contenteditable="true">192 KBPS</span>
-            <span contenteditable="true" style="color:white; text-shadow:none;">03:18</span>
+        <div class="info-screen">
+            <div class="scrolling-text" contenteditable="true" spellcheck="false">
+                My Chemical Romance - Helena
+            </div>
+            <div class="time-row">
+                <span contenteditable="true">Playing</span>
+                <span contenteditable="true">03:26</span>
+            </div>
         </div>
-    </div>
 
-    <div class="controls">
-        <button class="glossy-btn">PREV</button>
-        <button class="glossy-btn">PLAY</button>
-        <button class="glossy-btn">PAUSE</button>
-        <button class="glossy-btn">STOP</button>
-        <button class="glossy-btn">NEXT</button>
-    </div>
+        <div class="btn-row">
+            <button class="glass-btn">⏮</button>
+            <button class="glass-btn">⏯</button>
+            <button class="glass-btn">⏹</button>
+            <button class="glass-btn">⏭</button>
+        </div>
 
-    <div class="playlist" id="pl-box">
-        <div class="pl-row active">
-            <div class="pl-num" contenteditable="true">1</div>
-            <div class="pl-title" contenteditable="true">Britney Spears - Toxic</div>
-            <div class="pl-time" contenteditable="true">3:18</div>
-        </div>
-        <div class="pl-row">
-            <div class="pl-num" contenteditable="true">2</div>
-            <div class="pl-title" contenteditable="true">Linkin Park - Numb</div>
-            <div class="pl-time" contenteditable="true">3:07</div>
-        </div>
-        <div class="pl-row">
-            <div class="pl-num" contenteditable="true">3</div>
-            <div class="pl-title" contenteditable="true">Evanescence - Bring Me To Life</div>
-            <div class="pl-time" contenteditable="true">3:55</div>
-        </div>
-        <div class="pl-row">
-            <div class="pl-num" contenteditable="true">4</div>
-            <div class="pl-title" contenteditable="true">No Doubt - Hella Good</div>
-            <div class="pl-time" contenteditable="true">4:02</div>
-        </div>
-        <div class="pl-row">
-            <div class="pl-num" contenteditable="true">5</div>
-            <div class="pl-title" contenteditable="true">Kylie Minogue - Can't Get You...</div>
-            <div class="pl-time" contenteditable="true">3:50</div>
+        <div class="mood-bar" contenteditable="true" spellcheck="false">
+            Mood: feeling nostalgic... 🥀
         </div>
     </div>
 </div>
 
-<div id="editor-ui">
-    <h3 style="margin:0 0 10px 0;">✨ MAKE IT CUTE ✨</h3>
+<div id="editor">
+    <h3>🛠️ CUSTOMIZE</h3>
     
-    <p style="font-size:12px; color:#666;">Choose Aesthetic:</p>
-    <div class="theme-dot" style="background:#ffcce0;" onclick="setTheme('sakura')"></div>
-    <div class="theme-dot" style="background:#ccf2ff;" onclick="setTheme('aqua')"></div>
-    <div class="theme-dot" style="background:#000; border-color:#0f0;" onclick="setTheme('cyber')"></div>
-    
-    <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
-    
-    <button onclick="addSticker()" style="background:#fff; border:2px solid #eee; padding:8px; cursor:pointer;">💖 Add Sparkles</button>
-    <button onclick="clearStickers()" style="background:#fff; border:2px solid #eee; padding:8px; cursor:pointer;">❌ Clear</button>
+    <input type="file" id="art-upload" accept="image/*" onchange="loadArt(this)">
+    <input type="file" id="bg-upload" accept="image/*" onchange="loadBg(this)">
+
+    <button class="tool-btn" onclick="document.getElementById('bg-upload').click()">🖼️ Set Wallpaper</button>
+    <button class="tool-btn" onclick="toggleCRT()">📺 CRT Effect</button>
+    <button class="tool-btn" onclick="toggleTheme()">🎨 Switch Pink/Blue</button>
     
     <br><br>
-    <button onclick="savePhoto()" style="width:100%; padding:15px; background:var(--highlight); color:white; border:none; border-radius:5px; font-weight:bold; font-size:14px; cursor:pointer;">📸 SAVE AESTHETIC</button>
+    <button class="tool-btn" style="background: #00ff00; color: black; font-weight: bold; width: 100%;" onclick="saveImage()">📸 SAVE IMAGE</button>
 </div>
 
 <script>
-    function setTheme(theme) {
-        const root = document.documentElement;
-        if (theme === 'sakura') {
-            root.style.setProperty('--bg-body', '#2d1b2a');
-            root.style.setProperty('--skin-base', '#ffcce0');
-            root.style.setProperty('--screen-bg', '#2b0014');
-            root.style.setProperty('--screen-text', '#ff0077');
-            root.style.setProperty('--highlight', '#ff0077');
-            root.style.setProperty('--btn-grad', 'linear-gradient(180deg, #fff 0%, #ff99cc 50%, #ff66b2 51%, #ffccdd 100%)');
-        } else if (theme === 'aqua') {
-            root.style.setProperty('--bg-body', '#001a2b');
-            root.style.setProperty('--skin-base', '#ccf2ff');
-            root.style.setProperty('--screen-bg', '#002b36');
-            root.style.setProperty('--screen-text', '#00ffff');
-            root.style.setProperty('--highlight', '#0099cc');
-            root.style.setProperty('--btn-grad', 'linear-gradient(180deg, #fff 0%, #99ddff 50%, #33bbff 51%, #ccEEff 100%)');
-        } else if (theme === 'cyber') {
-            root.style.setProperty('--bg-body', '#000');
-            root.style.setProperty('--skin-base', '#222');
-            root.style.setProperty('--screen-bg', '#000');
-            root.style.setProperty('--screen-text', '#00ff00');
-            root.style.setProperty('--highlight', '#00ff00');
-            root.style.setProperty('--btn-grad', 'linear-gradient(180deg, #888 0%, #444 50%, #222 51%, #666 100%)');
+    // 1. Load Album Art
+    function loadArt(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('art-img').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
-    const stickers = ['✨', '💖', '🦋', '💿', '⭐', '💫', '🌸', '🎧'];
-    
-    function addSticker() {
-        const player = document.getElementById('player-container');
-        const s = document.createElement('div');
-        s.className = 'sticker';
-        s.innerText = stickers[Math.floor(Math.random() * stickers.length)];
-        
-        // Random position within the player
-        const x = Math.random() * (player.clientWidth - 20);
-        const y = Math.random() * (player.clientHeight - 20);
-        
-        s.style.left = x + 'px';
-        s.style.top = y + 'px';
-        
-        player.appendChild(s);
+    // 2. Load Background Wallpaper
+    function loadBg(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.body.style.backgroundImage = `url(${e.target.result})`;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
     }
 
-    function clearStickers() {
-        const s = document.querySelectorAll('.sticker');
-        s.forEach(el => el.remove());
+    // 3. Toggle CRT Scanlines
+    function toggleCRT() {
+        const scan = document.getElementById('scanlines');
+        scan.style.display = scan.style.display === 'block' ? 'none' : 'block';
     }
 
-    function savePhoto() {
-        const element = document.getElementById('player-container');
-        html2canvas(element, { 
-            scale: 3, // Super high quality
-            backgroundColor: null 
+    // 4. Toggle Theme Colors
+    let isPink = true;
+    function toggleTheme() {
+        const root = document.documentElement;
+        if (isPink) {
+            // Switch to Blue
+            root.style.setProperty('--theme-color', '#0099ff');
+            root.style.setProperty('--theme-bg', '#e6f7ff');
+            document.querySelector('.info-screen').style.color = '#00ffff';
+            document.querySelector('.info-screen').style.textShadow = '0 0 5px #00ffff';
+            isPink = false;
+        } else {
+            // Switch to Pink
+            root.style.setProperty('--theme-color', '#ff0099');
+            root.style.setProperty('--theme-bg', '#ffe6f2');
+            document.querySelector('.info-screen').style.color = '#00ff00';
+            document.querySelector('.info-screen').style.textShadow = '0 0 5px #00ff00';
+            isPink = true;
+        }
+    }
+
+    // 5. Save Function
+    function saveImage() {
+        // Capture the whole zone including background
+        const element = document.getElementById('capture-zone');
+        
+        // Temporarily hide the editor during snap? No need, it's outside capture-zone.
+        html2canvas(element, {
+            scale: 3,
+            backgroundColor: null, // Transparent to let body bg show if captured
+            useCORS: true
         }).then(canvas => {
             let link = document.createElement("a");
-            link.download = "y2k_aesthetic.png";
+            link.download = "my-profile-aesthetic.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
