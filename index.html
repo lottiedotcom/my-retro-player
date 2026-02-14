@@ -3,245 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2K Playlist Maker</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Y2K Ultra Player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            /* Default Theme: Winamp Blue */
-            --main-bg: #c0c0c0;
-            --title-bar: linear-gradient(90deg, #000080, #1084d0);
-            --highlight: #000080;
-            --text-main: #000;
-            --viz-color: #00ff00;
+            /* Default: SAKURA THEME */
+            --bg-body: #2d1b2a;
+            --skin-base: #ffcce0;
+            --skin-shadow: #ff99cc;
+            --screen-bg: #2b0014;
+            --screen-text: #ff0077;
+            --btn-grad: linear-gradient(180deg, #fff 0%, #ff99cc 50%, #ff66b2 51%, #ffccdd 100%);
+            --highlight: #ff0077;
         }
 
         body {
-            background: #222;
+            background: var(--bg-body);
             font-family: 'Tahoma', sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            padding: 20px; margin: 0;
-            min-height: 100vh;
+            padding: 20px; margin: 0; min-height: 100vh;
+            user-select: none;
         }
 
-        /* --- THE PLAYER SKIN --- */
-        #player-skin {
-            width: 95%; max-width: 380px;
-            background: var(--main-bg);
-            border: 2px solid #fff;
-            border-right-color: #555; border-bottom-color: #555;
-            padding: 4px;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+        /* --- THE PLAYER --- */
+        #player-container {
+            width: 100%; max-width: 380px;
+            background: var(--skin-base);
+            border: 3px solid #fff;
+            border-radius: 10px 10px 4px 4px;
+            box-shadow: 
+                inset 2px 2px 5px rgba(255,255,255,0.8),
+                inset -2px -2px 5px rgba(0,0,0,0.2),
+                0 10px 25px rgba(0,0,0,0.6);
+            padding: 6px;
             position: relative;
+            overflow: hidden; /* For stickers */
         }
 
         /* Title Bar */
         .title-bar {
-            background: var(--title-bar);
-            height: 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 4px;
-            color: white; font-weight: bold; font-size: 11px;
-            margin-bottom: 5px; cursor: default;
+            background: linear-gradient(90deg, var(--highlight), #444);
+            color: white; padding: 4px 8px; font-weight: bold; font-size: 11px;
+            border-radius: 6px 6px 0 0; margin-bottom: 6px;
+            display: flex; justify-content: space-between; letter-spacing: 1px;
         }
 
-        /* The "Black Screen" Area */
-        .main-display {
-            background: #000;
+        /* Main LCD Screen */
+        .main-lcd {
+            background: var(--screen-bg);
+            border: 2px inset rgba(255,255,255,0.3);
+            border-radius: 4px;
             padding: 8px;
-            margin-bottom: 5px;
-            border: 2px inset #888;
-            display: flex; flex-direction: column; gap: 5px;
+            margin-bottom: 8px;
+            position: relative;
         }
 
-        /* Editable Song Title */
-        .song-info {
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            border-bottom: 1px dashed #333;
+        /* Digital Font Styling */
+        .digi-text {
+            font-family: 'VT323', monospace;
+            color: var(--screen-text);
+            text-shadow: 0 0 4px var(--screen-text);
+            font-size: 22px; line-height: 1;
         }
 
-        /* The Visualizer Bars */
-        .visualizer {
-            display: flex; align-items: flex-end; gap: 2px;
-            height: 40px; border-bottom: 1px solid #333;
-            padding-bottom: 2px;
+        /* Scrolling Marquee */
+        .marquee-container {
+            white-space: nowrap; overflow: hidden; margin-bottom: 5px;
+            border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 4px;
+        }
+        .marquee-text {
+            display: inline-block; padding-left: 100%;
+            animation: marquee 8s linear infinite;
+        }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+
+        /* Fake Spectrum Analyzer */
+        .spectrum {
+            display: flex; gap: 1px; height: 30px; align-items: flex-end; opacity: 0.8;
         }
         .bar {
-            flex: 1; background: var(--viz-color);
-            animation: bounce 0.5s infinite alternate;
+            flex: 1; background: var(--screen-text);
+            animation: bounce 0.4s infinite ease-in-out alternate;
         }
-        /* Randomize animation speeds for "fake" look */
-        .bar:nth-child(1) { animation-duration: 0.4s; height: 40%; }
-        .bar:nth-child(2) { animation-duration: 0.6s; height: 70%; }
-        .bar:nth-child(3) { animation-duration: 0.3s; height: 50%; }
-        .bar:nth-child(4) { animation-duration: 0.5s; height: 80%; }
-        .bar:nth-child(5) { animation-duration: 0.4s; height: 60%; }
-        .bar:nth-child(6) { animation-duration: 0.7s; height: 30%; }
-        
-        @keyframes bounce { 
-            0% { opacity: 0.5; height: 10%; } 
-            100% { opacity: 1; height: 100%; } 
+        /* Random heights */
+        .bar:nth-child(odd) { animation-duration: 0.3s; }
+        .bar:nth-child(2n) { animation-duration: 0.5s; }
+        .bar:nth-child(3n) { animation-duration: 0.2s; }
+        @keyframes bounce { 0% { height: 10%; opacity: 0.3; } 100% { height: 100%; opacity: 1; } }
+
+        /* Timer Row */
+        .lcd-stats {
+            display: flex; justify-content: space-between; margin-top: 4px; font-size: 18px;
         }
 
-        /* Controls Row */
-        .controls {
-            display: flex; gap: 2px; margin-bottom: 5px;
+        /* Buttons (The "Glossy" Look) */
+        .controls { display: flex; gap: 4px; margin-bottom: 8px; }
+        .glossy-btn {
+            flex: 1; height: 35px; border: 1px solid rgba(0,0,0,0.3); border-radius: 4px;
+            background: var(--btn-grad);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+            font-size: 10px; font-weight: bold; color: #333; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
-        .btn {
-            background: #d4d0c8; border: 2px outset #fff;
-            font-size: 10px; font-weight: bold; width: 100%;
-            cursor: pointer; padding: 5px 0;
-        }
-        .btn:active { border: 2px inset #fff; }
+        .glossy-btn:active { transform: translateY(1px); box-shadow: none; filter: brightness(0.9); }
 
-        /* Playlist Window */
-        .playlist-box {
-            background: #fff;
-            border: 2px inset #fff;
-            height: 180px;
-            overflow-y: hidden; /* Hide scrollbar for cleaner screenshot */
-            font-size: 11px;
+        /* Playlist */
+        .playlist {
+            background: #fff; border: 2px inset #fff; height: 160px;
+            overflow-y: hidden; font-size: 10px; color: #000;
         }
+        .pl-row {
+            display: flex; padding: 3px; border-bottom: 1px solid #eee; cursor: text;
+        }
+        .pl-row:nth-child(even) { background: #f7f7f7; }
+        .pl-row.active { background: var(--highlight); color: white; }
         
-        table { width: 100%; border-collapse: collapse; }
-        th { background: var(--main-bg); text-align: left; padding: 2px; border-bottom: 1px solid #888; }
-        td { padding: 3px; border-bottom: 1px solid #eee; cursor: text; }
-        
-        /* The "Selected" row look */
-        .selected { background: var(--highlight); color: white; }
+        .pl-num { width: 20px; text-align: center; }
+        .pl-title { flex: 1; padding-left: 5px; }
+        .pl-time { width: 30px; text-align: right; }
 
-        /* --- EDITOR TOOLS (Won't show in photo) --- */
-        #tools {
-            margin-top: 30px; text-align: center; color: #888; width: 100%; max-width: 400px;
+        /* Floating Stickers */
+        .sticker { position: absolute; font-size: 20px; pointer-events: none; animation: float 3s infinite ease-in-out; }
+        @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+
+        /* --- EDITOR UI --- */
+        #editor-ui {
+            background: #fff; padding: 15px; border-radius: 10px; width: 95%; max-width: 380px;
+            margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center;
         }
-        .theme-btn {
-            width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
-            display: inline-block; cursor: pointer; margin: 0 5px;
+        .theme-dot {
+            display: inline-block; width: 30px; height: 30px; border-radius: 50%; 
+            margin: 5px; cursor: pointer; border: 2px solid #ddd;
         }
-        [contenteditable]:focus { outline: 2px solid hotpink; background: rgba(255,255,0,0.2); color: black;} 
-        .selected [contenteditable]:focus { color: white; }
+        [contenteditable]:focus { background: yellow; color: black; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="player-skin">
+<div id="player-container">
     <div class="title-bar">
-        <span>WinAmp 2003</span>
+        <span>WINAMP 2003</span>
         <span>_ □ X</span>
     </div>
 
-    <div class="main-display">
-        <div class="song-info" contenteditable="true">1. Britney Spears - Toxic (Y2K Remix)</div>
-        
-        <div class="visualizer">
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="main-lcd">
+        <div class="marquee-container">
+            <div class="marquee-text digi-text" contenteditable="true" id="scrolling-title">
+                *** BRITNEY SPEARS - TOXIC (Y2K CLUB REMIX) *** </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; color:#00ff00; font-family:monospace;">
-            <span contenteditable="true">128kbps</span>
-            <span contenteditable="true">03:42</span>
+        <div class="spectrum">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+
+        <div class="lcd-stats digi-text">
+            <span contenteditable="true">192 KBPS</span>
+            <span contenteditable="true" style="color:white; text-shadow:none;">03:18</span>
         </div>
     </div>
 
     <div class="controls">
-        <button class="btn">PREV</button>
-        <button class="btn">PLAY</button>
-        <button class="btn">PAUSE</button>
-        <button class="btn">STOP</button>
-        <button class="btn">NEXT</button>
+        <button class="glossy-btn">PREV</button>
+        <button class="glossy-btn">PLAY</button>
+        <button class="glossy-btn">PAUSE</button>
+        <button class="glossy-btn">STOP</button>
+        <button class="glossy-btn">NEXT</button>
     </div>
 
-    <div class="playlist-box">
-        <table id="list-table">
-            <thead>
-                <tr><th width="20">#</th><th>Artist - Title</th><th width="30">Time</th></tr>
-            </thead>
-            <tbody>
-                <tr class="selected">
-                    <td contenteditable="true">1</td>
-                    <td contenteditable="true">Britney Spears - Toxic</td>
-                    <td contenteditable="true">3:18</td>
-                </tr>
-                <tr>
-                    <td contenteditable="true">2</td>
-                    <td contenteditable="true">Linkin Park - Numb</td>
-                    <td contenteditable="true">3:07</td>
-                </tr>
-                <tr>
-                    <td contenteditable="true">3</td>
-                    <td contenteditable="true">Evanescence - Bring Me To Life</td>
-                    <td contenteditable="true">3:55</td>
-                </tr>
-                <tr>
-                    <td contenteditable="true">4</td>
-                    <td contenteditable="true">Avril Lavigne - Sk8er Boi</td>
-                    <td contenteditable="true">3:23</td>
-                </tr>
-                <tr>
-                    <td contenteditable="true">5</td>
-                    <td contenteditable="true">OutKast - Hey Ya!</td>
-                    <td contenteditable="true">3:55</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="playlist" id="pl-box">
+        <div class="pl-row active">
+            <div class="pl-num" contenteditable="true">1</div>
+            <div class="pl-title" contenteditable="true">Britney Spears - Toxic</div>
+            <div class="pl-time" contenteditable="true">3:18</div>
+        </div>
+        <div class="pl-row">
+            <div class="pl-num" contenteditable="true">2</div>
+            <div class="pl-title" contenteditable="true">Linkin Park - Numb</div>
+            <div class="pl-time" contenteditable="true">3:07</div>
+        </div>
+        <div class="pl-row">
+            <div class="pl-num" contenteditable="true">3</div>
+            <div class="pl-title" contenteditable="true">Evanescence - Bring Me To Life</div>
+            <div class="pl-time" contenteditable="true">3:55</div>
+        </div>
+        <div class="pl-row">
+            <div class="pl-num" contenteditable="true">4</div>
+            <div class="pl-title" contenteditable="true">No Doubt - Hella Good</div>
+            <div class="pl-time" contenteditable="true">4:02</div>
+        </div>
+        <div class="pl-row">
+            <div class="pl-num" contenteditable="true">5</div>
+            <div class="pl-title" contenteditable="true">Kylie Minogue - Can't Get You...</div>
+            <div class="pl-time" contenteditable="true">3:50</div>
+        </div>
     </div>
 </div>
 
-<div id="tools">
-    <p>🎨 PICK A SKIN:</p>
-    <div class="theme-btn" style="background:#000080;" onclick="setTheme('blue')"></div>
-    <div class="theme-btn" style="background:#ff69b4;" onclick="setTheme('pink')"></div>
-    <div class="theme-btn" style="background:#444;" onclick="setTheme('silver')"></div>
+<div id="editor-ui">
+    <h3 style="margin:0 0 10px 0;">✨ MAKE IT CUTE ✨</h3>
+    
+    <p style="font-size:12px; color:#666;">Choose Aesthetic:</p>
+    <div class="theme-dot" style="background:#ffcce0;" onclick="setTheme('sakura')"></div>
+    <div class="theme-dot" style="background:#ccf2ff;" onclick="setTheme('aqua')"></div>
+    <div class="theme-dot" style="background:#000; border-color:#0f0;" onclick="setTheme('cyber')"></div>
+    
+    <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
+    
+    <button onclick="addSticker()" style="background:#fff; border:2px solid #eee; padding:8px; cursor:pointer;">💖 Add Sparkles</button>
+    <button onclick="clearStickers()" style="background:#fff; border:2px solid #eee; padding:8px; cursor:pointer;">❌ Clear</button>
+    
     <br><br>
-    <button onclick="addRow()" style="padding:10px;">➕ Add Row</button>
-    <button onclick="takeSnap()" style="padding:10px; background: #00ff00; font-weight:bold;">📷 SAVE PHOTO</button>
-    <p style="font-size: 12px; margin-top: 10px;">✨ TIP: Click directly on the song names or times above to rewrite them!</p>
+    <button onclick="savePhoto()" style="width:100%; padding:15px; background:var(--highlight); color:white; border:none; border-radius:5px; font-weight:bold; font-size:14px; cursor:pointer;">📸 SAVE AESTHETIC</button>
 </div>
 
 <script>
-    function setTheme(color) {
+    function setTheme(theme) {
         const root = document.documentElement;
-        if (color === 'blue') {
-            root.style.setProperty('--main-bg', '#c0c0c0');
-            root.style.setProperty('--title-bar', 'linear-gradient(90deg, #000080, #1084d0)');
-            root.style.setProperty('--highlight', '#000080');
-            root.style.setProperty('--viz-color', '#00ff00');
-        } else if (color === 'pink') {
-            root.style.setProperty('--main-bg', '#ffe0f0');
-            root.style.setProperty('--title-bar', 'linear-gradient(90deg, #ff1493, #ff69b4)');
-            root.style.setProperty('--highlight', '#ff1493');
-            root.style.setProperty('--viz-color', '#ff00ff');
-        } else if (color === 'silver') {
-            root.style.setProperty('--main-bg', '#dcdcdc');
-            root.style.setProperty('--title-bar', 'linear-gradient(90deg, #444, #888)');
-            root.style.setProperty('--highlight', '#555');
-            root.style.setProperty('--viz-color', '#00ffff');
+        if (theme === 'sakura') {
+            root.style.setProperty('--bg-body', '#2d1b2a');
+            root.style.setProperty('--skin-base', '#ffcce0');
+            root.style.setProperty('--screen-bg', '#2b0014');
+            root.style.setProperty('--screen-text', '#ff0077');
+            root.style.setProperty('--highlight', '#ff0077');
+            root.style.setProperty('--btn-grad', 'linear-gradient(180deg, #fff 0%, #ff99cc 50%, #ff66b2 51%, #ffccdd 100%)');
+        } else if (theme === 'aqua') {
+            root.style.setProperty('--bg-body', '#001a2b');
+            root.style.setProperty('--skin-base', '#ccf2ff');
+            root.style.setProperty('--screen-bg', '#002b36');
+            root.style.setProperty('--screen-text', '#00ffff');
+            root.style.setProperty('--highlight', '#0099cc');
+            root.style.setProperty('--btn-grad', 'linear-gradient(180deg, #fff 0%, #99ddff 50%, #33bbff 51%, #ccEEff 100%)');
+        } else if (theme === 'cyber') {
+            root.style.setProperty('--bg-body', '#000');
+            root.style.setProperty('--skin-base', '#222');
+            root.style.setProperty('--screen-bg', '#000');
+            root.style.setProperty('--screen-text', '#00ff00');
+            root.style.setProperty('--highlight', '#00ff00');
+            root.style.setProperty('--btn-grad', 'linear-gradient(180deg, #888 0%, #444 50%, #222 51%, #666 100%)');
         }
     }
 
-    function addRow() {
-        const table = document.querySelector("#list-table tbody");
-        const count = table.rows.length + 1;
-        const row = `<tr>
-            <td contenteditable="true">${count}</td>
-            <td contenteditable="true">New Song...</td>
-            <td contenteditable="true">0:00</td>
-        </tr>`;
-        table.innerHTML += row;
+    const stickers = ['✨', '💖', '🦋', '💿', '⭐', '💫', '🌸', '🎧'];
+    
+    function addSticker() {
+        const player = document.getElementById('player-container');
+        const s = document.createElement('div');
+        s.className = 'sticker';
+        s.innerText = stickers[Math.floor(Math.random() * stickers.length)];
+        
+        // Random position within the player
+        const x = Math.random() * (player.clientWidth - 20);
+        const y = Math.random() * (player.clientHeight - 20);
+        
+        s.style.left = x + 'px';
+        s.style.top = y + 'px';
+        
+        player.appendChild(s);
     }
 
-    function takeSnap() {
-        const element = document.getElementById('player-skin');
-        html2canvas(element, { scale: 3, backgroundColor: null }).then(canvas => {
+    function clearStickers() {
+        const s = document.querySelectorAll('.sticker');
+        s.forEach(el => el.remove());
+    }
+
+    function savePhoto() {
+        const element = document.getElementById('player-container');
+        html2canvas(element, { 
+            scale: 3, // Super high quality
+            backgroundColor: null 
+        }).then(canvas => {
             let link = document.createElement("a");
-            link.download = "y2k-playlist.png";
+            link.download = "y2k_aesthetic.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
